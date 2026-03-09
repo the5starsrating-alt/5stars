@@ -488,23 +488,23 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
   </div>
 
   <div class="sidebar-nav">
-    <button class="nav-item active" onclick="showSection('overview')">
+    <button class="nav-item active" data-section="overview">
       <span class="ni">📊</span> نظرة عامة
     </button>
-    <button class="nav-item" onclick="showSection('googlebusiness')">
+    <button class="nav-item" data-section="googlebusiness">
       <span class="ni">🔗</span> Google Business
     </button>
-    <button class="nav-item" onclick="showSection('reviews')">
+    <button class="nav-item" data-section="reviews">
       <span class="ni">⭐</span> التقييمات
       <span class="nav-badge" id="pendingBadge">0</span>
     </button>
-    <button class="nav-item" onclick="showSection('qr')">
+    <button class="nav-item" data-section="qr">
       <span class="ni">📱</span> QR Code
     </button>
-    <button class="nav-item" onclick="showSection('filter')">
+    <button class="nav-item" data-section="filter">
       <span class="ni">🛡️</span> فلتر التقييمات
     </button>
-    <button class="nav-item" onclick="showSection('settings')">
+    <button class="nav-item" data-section="settings">
       <span class="ni">⚙️</span> الإعدادات
     </button>
   </div>
@@ -530,11 +530,11 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
 
   <!-- Mobile bottom nav -->
   <div class="bottom-nav">
-    <button onclick="showSectionMobile('overview', this)" class="active"><span class="bni">📊</span>نظرة عامة</button>
-    <button onclick="showSectionMobile('reviews', this)"><span class="bni">⭐</span>التقييمات</button>
-    <button onclick="showSectionMobile('googlebusiness', this)"><span class="bni">🔗</span>Google</button>
-    <button onclick="showSectionMobile('qr', this)"><span class="bni">📱</span>QR Code</button>
-    <button onclick="showSectionMobile('settings', this)"><span class="bni">⚙️</span>الإعدادات</button>
+    <button data-section="overview" class="active"><span class="bni">📊</span>نظرة عامة</button>
+    <button data-section="reviews"><span class="bni">⭐</span>التقييمات</button>
+    <button data-section="googlebusiness"><span class="bni">🔗</span>Google</button>
+    <button data-section="qr"><span class="bni">📱</span>QR Code</button>
+    <button data-section="settings"><span class="bni">⚙️</span>الإعدادات</button>
   </div>
 
   <!-- ═══ SECTION: OVERVIEW ═══ -->
@@ -1324,21 +1324,22 @@ function showSectionMobile(name, el) {
 function showSection(name) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
+
   const sec = document.getElementById('sec-' + name);
   if (sec) sec.classList.add('active');
-  // Highlight active nav item
-  document.querySelectorAll('.nav-item').forEach(n => {
-    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'" + name + "'")) {
-      n.classList.add('active');
-    }
-  });
-  // Sync mobile nav
-  document.querySelectorAll('.bottom-nav button').forEach(b => {
-    if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + name + "'")) {
-      b.classList.add('active');
-    }
-  });
+
+  document.querySelectorAll('[data-section="' + name + '"]').forEach(el => el.classList.add('active'));
 }
+
+// ربط الـ nav items عبر event listeners
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('[data-section]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      showSection(this.getAttribute('data-section'));
+    });
+  });
+});
 
 // ══════════════════════════════════
 //  QR CODE
