@@ -401,7 +401,8 @@ const sb = createClient(
       detectSessionInUrl: true,
       persistSession: true,
       autoRefreshToken: true,
-      flowType: "pkce"
+      storageKey: 'sb-xdmbwtnpadjeinclmffh-auth-token',
+      flowType: 'pkce'
     }
   }
 );
@@ -561,11 +562,8 @@ async function loginWithGoogle() {
     const { error } = await sb.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'https://5stars-qneqeyzm5-wwwthe5starsratingcom.vercel.app/auth-callback.html',
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent'
-        }
+        redirectTo: window.location.origin + '/signup.html',
+        storageKey: 'sb-xdmbwtnpadjeinclmffh-auth-token'
       }
     });
     if (error) throw error;
@@ -607,16 +605,39 @@ document.addEventListener('keydown', e => {
 //  HANDLE AUTH STATE
 // ══════════════════════════════════
 
-// onAuthStateChange يشتغل تلقائياً بعد Google OAuth (PKCE flow)
-sb.auth.onAuthStateChange((event, session) => {
-  if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+// فحص إذا في session موجودة أصلاً أو جاية من Google OAuth
+sb.auth.getSession().then(async ({ data: { session } }) => {
+  if (session) {
+    // احفظ الـ profile إذا مستخدم جديد
+    try {
+      const name = session.user.user_metadata?.full_name 
+        || session.user.user_metadata?.name 
+        || session.user.email;
+      await sb.from('profiles').upsert({
+        id: session.user.id,
+        full_name: name,
+        plan: 'trial',
+        trial_ends: new Date(Date.now() + 14*24*60*60*1000).toISOString()
+      }, { onConflict: 'id', ignoreDuplicates: true });
+    } catch(e) {}
     window.location.replace('dashboard.html');
   }
 });
 
-// فحص إذا في session موجودة أصلاً
-sb.auth.getSession().then(({ data: { session } }) => {
-  if (session) {
+// يشتغل عند إتمام Google OAuth
+sb.auth.onAuthStateChange(async (event, session) => {
+  if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+    try {
+      const name = session.user.user_metadata?.full_name 
+        || session.user.user_metadata?.name 
+        || session.user.email;
+      await sb.from('profiles').upsert({
+        id: session.user.id,
+        full_name: name,
+        plan: 'trial',
+        trial_ends: new Date(Date.now() + 14*24*60*60*1000).toISOString()
+      }, { onConflict: 'id', ignoreDuplicates: true });
+    } catch(e) {}
     window.location.replace('dashboard.html');
   }
 });
