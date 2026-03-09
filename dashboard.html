@@ -469,6 +469,12 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
   <div class="loading-box">
     <div class="loading-spinner"></div>
     <div style="font-weight:700;color:var(--blue)">جاري التحميل...</div>
+    <div id="loadingSkip" style="display:none;margin-top:16px;">
+      <button onclick="document.getElementById('loadingOverlay').style.display='none'" 
+        style="background:var(--blue3);color:#fff;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:13px;">
+        تخطي ودخول اللوحة
+      </button>
+    </div>
   </div>
 </div>
 
@@ -488,23 +494,23 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
   </div>
 
   <div class="sidebar-nav">
-    <button class="nav-item active" data-section="overview">
+    <button class="nav-item active" data-section="overview" onclick="showSection('overview')">
       <span class="ni">📊</span> نظرة عامة
     </button>
-    <button class="nav-item" data-section="googlebusiness">
+    <button class="nav-item" data-section="googlebusiness" onclick="showSection('googlebusiness')">
       <span class="ni">🔗</span> Google Business
     </button>
-    <button class="nav-item" data-section="reviews">
+    <button class="nav-item" data-section="reviews" onclick="showSection('reviews')">
       <span class="ni">⭐</span> التقييمات
       <span class="nav-badge" id="pendingBadge">0</span>
     </button>
-    <button class="nav-item" data-section="qr">
+    <button class="nav-item" data-section="qr" onclick="showSection('qr')">
       <span class="ni">📱</span> QR Code
     </button>
-    <button class="nav-item" data-section="filter">
+    <button class="nav-item" data-section="filter" onclick="showSection('filter')">
       <span class="ni">🛡️</span> فلتر التقييمات
     </button>
-    <button class="nav-item" data-section="settings">
+    <button class="nav-item" data-section="settings" onclick="showSection('settings')">
       <span class="ni">⚙️</span> الإعدادات
     </button>
   </div>
@@ -530,11 +536,11 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
 
   <!-- Mobile bottom nav -->
   <div class="bottom-nav">
-    <button data-section="overview" class="active"><span class="bni">📊</span>نظرة عامة</button>
-    <button data-section="reviews"><span class="bni">⭐</span>التقييمات</button>
-    <button data-section="googlebusiness"><span class="bni">🔗</span>Google</button>
-    <button data-section="qr"><span class="bni">📱</span>QR Code</button>
-    <button data-section="settings"><span class="bni">⚙️</span>الإعدادات</button>
+    <button data-section="overview" onclick="showSection('overview')" class="active"><span class="bni">📊</span>نظرة عامة</button>
+    <button data-section="reviews" onclick="showSection('reviews')"><span class="bni">⭐</span>التقييمات</button>
+    <button data-section="googlebusiness" onclick="showSection('googlebusiness')"><span class="bni">🔗</span>Google</button>
+    <button data-section="qr" onclick="showSection('qr')"><span class="bni">📱</span>QR Code</button>
+    <button data-section="settings" onclick="showSection('settings')"><span class="bni">⚙️</span>الإعدادات</button>
   </div>
 
   <!-- ═══ SECTION: OVERVIEW ═══ -->
@@ -1186,6 +1192,20 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
 
 <script>
 // ══════════════════════════════════
+//  NAVIGATION — أول شيء يُعرَّف
+// ══════════════════════════════════
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
+  var sec = document.getElementById('sec-' + name);
+  if (sec) sec.classList.add('active');
+  document.querySelectorAll('[data-section="' + name + '"]').forEach(function(el) {
+    el.classList.add('active');
+  });
+}
+
+// ══════════════════════════════════
 //  SUPABASE
 // ══════════════════════════════════
 const { createClient } = supabase;
@@ -1210,23 +1230,26 @@ let currentProfile = null;
 //  INIT
 // ══════════════════════════════════
 async function init() {
-  // انتظر الـ session تكون جاهزة
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  let { data: { session } } = await sb.auth.getSession();
+  try {
+    await new Promise(resolve => setTimeout(resolve, 800));
+    let { data: { session } } = await sb.auth.getSession();
 
-  if (!session) {
-    // محاولة ثانية بعد ثانية إضافية
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const { data: { session: session2 } } = await sb.auth.getSession();
-    if (!session2) {
-      window.location.replace('signup.html');
-      return;
+    if (!session) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { data: { session: session2 } } = await sb.auth.getSession();
+      if (!session2) {
+        window.location.replace('signup.html');
+        return;
+      }
+      session = session2;
     }
-    session = session2;
-  }
 
-  await loadDashboard(session);
+    await loadDashboard(session);
+  } catch(err) {
+    console.error('init error:', err);
+    // أخفِ الـ overlay حتى لو فيه خطأ
+    document.getElementById('loadingOverlay').style.display = 'none';
+  }
 }
 
 sb.auth.onAuthStateChange(async (event, session) => {
@@ -1309,37 +1332,6 @@ async function loadDashboard(session) {
   setTimeout(() => { initChart(); loadGBFromStorage(); }, 100);
 }
 
-function showSectionMobile(name, el) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById('sec-' + name).classList.add('active');
-  if (el) el.classList.add('active');
-  // Also sync sidebar
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-}
-
-// ══════════════════════════════════
-//  NAVIGATION
-// ══════════════════════════════════
-function showSection(name) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
-
-  const sec = document.getElementById('sec-' + name);
-  if (sec) sec.classList.add('active');
-
-  document.querySelectorAll('[data-section="' + name + '"]').forEach(el => el.classList.add('active'));
-}
-
-// ربط الـ nav items عبر event listeners
-document.addEventListener('DOMContentLoaded', function() {
-  document.querySelectorAll('[data-section]').forEach(btn => {
-    btn.addEventListener('click', function() {
-      showSection(this.getAttribute('data-section'));
-    });
-  });
-});
 
 // ══════════════════════════════════
 //  QR CODE
@@ -1929,6 +1921,14 @@ async function fetchReviews() {
 }
 
 // START
+setTimeout(() => {
+  const skip = document.getElementById('loadingSkip');
+  const overlay = document.getElementById('loadingOverlay');
+  if (skip && overlay && overlay.style.display !== 'none') {
+    skip.style.display = 'block';
+  }
+}, 4000);
+
 init();
 </script>
 </body>
