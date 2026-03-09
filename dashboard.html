@@ -785,7 +785,15 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
 const { createClient } = supabase;
 const sb = createClient(
   'https://xdmbwtnpadjeinclmffh.supabase.co',
-  'sb_publishable_MXzO5_juPmKitzZ4JQ5Ddw_vvLxcH1i'
+  'sb_publishable_MXzO5_juPmKitzZ4JQ5Ddw_vvLxcH1i',
+  {
+    auth: {
+      detectSessionInUrl: true,
+      persistSession: true,
+      autoRefreshToken: true,
+      flowType: 'pkce'
+    }
+  }
 );
 
 let currentUser = null;
@@ -798,13 +806,8 @@ async function init() {
   const { data: { session } } = await sb.auth.getSession();
 
   if (!session) {
-    // Wait briefly in case OAuth token is still being processed
-    await new Promise(resolve => setTimeout(resolve, 800));
-    const { data: { session: session2 } } = await sb.auth.getSession();
-    if (!session2) {
-      window.location.href = 'signup.html';
-      return;
-    }
+    window.location.replace('signup.html');
+    return;
   }
 
   currentUser = session.user;

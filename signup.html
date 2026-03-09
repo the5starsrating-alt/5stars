@@ -395,7 +395,15 @@ body{
 const { createClient } = supabase;
 const sb = createClient(
   'https://xdmbwtnpadjeinclmffh.supabase.co',
-  'sb_publishable_MXzO5_juPmKitzZ4JQ5Ddw_vvLxcH1i'
+  'sb_publishable_MXzO5_juPmKitzZ4JQ5Ddw_vvLxcH1i',
+  {
+    auth: {
+      detectSessionInUrl: true,
+      persistSession: true,
+      autoRefreshToken: true,
+      flowType: 'pkce'
+    }
+  }
 );
 
 // ══════════════════════════════════
@@ -553,7 +561,7 @@ async function loginWithGoogle() {
     const { error } = await sb.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'https://5stars-qneqeyzm5-wwwthe5starsratingcom.vercel.app/signup.html'
+        redirectTo: 'https://5stars-qneqeyzm5-wwwthe5starsratingcom.vercel.app/dashboard.html'
       }
     });
     if (error) throw error;
@@ -592,38 +600,20 @@ document.addEventListener('keydown', e => {
 });
 
 // ══════════════════════════════════
-//  HANDLE AUTH (login + Google OAuth)
+//  HANDLE AUTH STATE
 // ══════════════════════════════════
 
-// 1. Handle Google OAuth callback (token comes back in URL hash)
-const hash = window.location.hash;
-if (hash && (hash.includes('access_token') || hash.includes('error'))) {
-  // Parse the hash Supabase sends back after Google login
-  sb.auth.getSession().then(({ data: { session } }) => {
-    if (session) {
-      // Clear the hash from URL then redirect
-      history.replaceState(null, '', window.location.pathname);
-      window.location.href = 'dashboard.html';
-    } else {
-      // Check for error in hash
-      const params = new URLSearchParams(hash.replace('#', ''));
-      const errDesc = params.get('error_description');
-      if (errDesc) showError(decodeURIComponent(errDesc.replace(/\+/g, ' ')));
-    }
-  });
-} else {
-  // 2. Already logged in? Go straight to dashboard
-  sb.auth.getSession().then(({ data: { session } }) => {
-    if (session) {
-      window.location.href = 'dashboard.html';
-    }
-  });
-}
-
-// 3. Listen for auth changes (catches Google OAuth in some browsers)
+// onAuthStateChange يشتغل تلقائياً بعد Google OAuth (PKCE flow)
 sb.auth.onAuthStateChange((event, session) => {
-  if (event === 'SIGNED_IN' && session) {
-    window.location.href = 'dashboard.html';
+  if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+    window.location.replace('dashboard.html');
+  }
+});
+
+// فحص إذا في session موجودة أصلاً
+sb.auth.getSession().then(({ data: { session } }) => {
+  if (session) {
+    window.location.replace('dashboard.html');
   }
 });
 </script>
