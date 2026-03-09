@@ -803,10 +803,20 @@ let currentProfile = null;
 //  INIT
 // ══════════════════════════════════
 async function init() {
+  // أعطِ Supabase وقتاً كافياً يحفظ الـ session في localStorage
+  await new Promise(resolve => setTimeout(resolve, 800));
+  
   const { data: { session } } = await sb.auth.getSession();
 
   if (!session) {
-    window.location.replace('signup.html');
+    // محاولة أخيرة بعد ثانية إضافية
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const { data: { session: session2 } } = await sb.auth.getSession();
+    if (!session2) {
+      window.location.replace('signup.html');
+      return;
+    }
+    await loadDashboard(session2);
     return;
   }
 

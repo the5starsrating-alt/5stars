@@ -98,11 +98,8 @@ function showError(msg) {
 
 async function handleCallback() {
   try {
-    // مع implicit flow، الـ token يجي في الـ URL hash
-    // Supabase يعالجه تلقائياً عبر detectSessionInUrl: true
-    
-    // أعطه لحظة يعالج الـ hash
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // أعطِ Supabase وقتاً يعالج الـ hash ويحفظ الـ session
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     const { data: { session }, error } = await sb.auth.getSession();
     
@@ -116,12 +113,15 @@ async function handleCallback() {
     // استنى onAuthStateChange كـ fallback
     const timeout = setTimeout(() => {
       showError('انتهت مهلة الانتظار. حاول مرة أخرى.');
-    }, 8000);
+    }, 10000);
 
     sb.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
         clearTimeout(timeout);
-        window.location.replace('dashboard.html');
+        // انتظر قليلاً يتأكد الـ session محفوظ
+        setTimeout(() => {
+          window.location.replace('dashboard.html');
+        }, 500);
       }
     });
 
