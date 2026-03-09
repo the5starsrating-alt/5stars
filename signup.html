@@ -639,7 +639,7 @@ async function handleAuthRedirect() {
   // Supabase JS يعالج كليهما تلقائياً عبر detectSessionInUrl
 
   // أعطِ Supabase ثانية يعالج الـ URL
-  await new Promise(resolve => setTimeout(resolve, 800));
+  await new Promise(resolve => setTimeout(resolve, 300));
 
   const { data: { session } } = await sb.auth.getSession();
   if (session) {
