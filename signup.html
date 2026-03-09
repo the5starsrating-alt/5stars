@@ -553,7 +553,7 @@ async function loginWithGoogle() {
     const { error } = await sb.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin + '/dashboard.html'
+        redirectTo: 'https://5stars-qneqeyzm5-wwwthe5starsratingcom.vercel.app/signup.html'
       }
     });
     if (error) throw error;
@@ -592,10 +592,37 @@ document.addEventListener('keydown', e => {
 });
 
 // ══════════════════════════════════
-//  CHECK IF ALREADY LOGGED IN
+//  HANDLE AUTH (login + Google OAuth)
 // ══════════════════════════════════
-sb.auth.getSession().then(({ data: { session } }) => {
-  if (session) {
+
+// 1. Handle Google OAuth callback (token comes back in URL hash)
+const hash = window.location.hash;
+if (hash && (hash.includes('access_token') || hash.includes('error'))) {
+  // Parse the hash Supabase sends back after Google login
+  sb.auth.getSession().then(({ data: { session } }) => {
+    if (session) {
+      // Clear the hash from URL then redirect
+      history.replaceState(null, '', window.location.pathname);
+      window.location.href = 'dashboard.html';
+    } else {
+      // Check for error in hash
+      const params = new URLSearchParams(hash.replace('#', ''));
+      const errDesc = params.get('error_description');
+      if (errDesc) showError(decodeURIComponent(errDesc.replace(/\+/g, ' ')));
+    }
+  });
+} else {
+  // 2. Already logged in? Go straight to dashboard
+  sb.auth.getSession().then(({ data: { session } }) => {
+    if (session) {
+      window.location.href = 'dashboard.html';
+    }
+  });
+}
+
+// 3. Listen for auth changes (catches Google OAuth in some browsers)
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN' && session) {
     window.location.href = 'dashboard.html';
   }
 });

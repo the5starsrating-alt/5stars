@@ -798,8 +798,13 @@ async function init() {
   const { data: { session } } = await sb.auth.getSession();
 
   if (!session) {
-    window.location.href = 'signup.html';
-    return;
+    // Wait briefly in case OAuth token is still being processed
+    await new Promise(resolve => setTimeout(resolve, 800));
+    const { data: { session: session2 } } = await sb.auth.getSession();
+    if (!session2) {
+      window.location.href = 'signup.html';
+      return;
+    }
   }
 
   currentUser = session.user;
