@@ -44,17 +44,26 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
   z-index: 100; overflow-y: auto;
 }
 .sidebar-logo {
-  padding: 24px 20px;
+  padding: 20px;
   border-bottom: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 .logo-box {
-  display: inline-flex; flex-direction: column; align-items: center;
-  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 12px; padding: 8px 16px; gap: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 }
-.logo-box .ln { font-family:'Tajawal',sans-serif; font-size:28px; font-weight:900; font-style:italic; background:linear-gradient(180deg,var(--gold3),var(--gold2),var(--gold)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; line-height:1; }
-.logo-box .lt { font-family:'Tajawal',sans-serif; font-size:28px; font-weight:900; color:#fff; line-height:1; margin-top:-4px; }
-.logo-box .ls { color:var(--gold2); font-size:9px; letter-spacing:4px; }
+.logo-box .ln { 
+  font-family:'Tajawal',sans-serif; font-size:26px; font-weight:900; font-style:italic; 
+  background:linear-gradient(180deg,var(--gold3),var(--gold2),var(--gold)); 
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; line-height:1; 
+}
+.logo-box .lt { 
+  font-family:'Tajawal',sans-serif; font-size:26px; font-weight:900; color:#fff; line-height:1;
+}
+.logo-stars { color:var(--gold2); font-size:9px; letter-spacing:2px; opacity:0.8; margin-top:2px; }
 
 .sidebar-user {
   padding: 16px 20px;
@@ -106,6 +115,8 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
   margin-right: var(--sidebar-w);
   min-height: 100vh;
   padding: 28px;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* ═══════════ HEADER ═══════════ */
@@ -463,11 +474,9 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
 <div class="sidebar">
   <div class="sidebar-logo">
     <div class="logo-box">
-      <div style="display:flex;align-items:baseline;direction:ltr;">
-        <span class="ln">5</span><span class="lt">tars</span>
-      </div>
-      <div class="ls">★★★★★</div>
+      <span class="ln">5</span><span class="lt">tars</span>
     </div>
+    <div class="logo-stars">★★★★★</div>
   </div>
 
   <div class="sidebar-user">
