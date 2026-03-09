@@ -791,7 +791,7 @@ const sb = createClient(
       detectSessionInUrl: true,
       persistSession: true,
       autoRefreshToken: true,
-      flowType: 'pkce'
+      flowType: "implicit"
     }
   }
 );
@@ -803,29 +803,17 @@ let currentProfile = null;
 //  INIT
 // ══════════════════════════════════
 async function init() {
-  // انتظر Supabase يعالج الـ token من URL أولاً
   const { data: { session } } = await sb.auth.getSession();
 
   if (!session) {
-    // لو ما في session، استنى ثانية واحدة ثم تحقق مرة ثانية
-    // (يحصل لما Google OAuth يرجع بـ code في URL)
-    setTimeout(async () => {
-      const { data: { session: session2 } } = await sb.auth.getSession();
-      if (!session2) {
-        window.location.replace('signup.html');
-      }
-    }, 1500);
+    window.location.replace('signup.html');
     return;
   }
 
   await loadDashboard(session);
 }
 
-// هذا يشتغل تلقائياً بعد Google OAuth
 sb.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN' && session) {
-    await loadDashboard(session);
-  }
   if (event === 'SIGNED_OUT') {
     window.location.replace('signup.html');
   }
