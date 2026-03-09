@@ -98,7 +98,6 @@ function showError(msg) {
 
 async function handleCallback() {
   try {
-    // أعطِ Supabase وقتاً يعالج الـ hash ويحفظ الـ session
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     const { data: { session }, error } = await sb.auth.getSession();
@@ -106,27 +105,50 @@ async function handleCallback() {
     if (error) throw error;
 
     if (session) {
+      await saveProfile(session.user);
+      // انتظر ثانيتين حتى تُحفظ الـ session في المتصفح
+      await new Promise(resolve => setTimeout(resolve, 2000));
       window.location.replace('dashboard.html');
       return;
     }
 
-    // استنى onAuthStateChange كـ fallback
     const timeout = setTimeout(() => {
       showError('انتهت مهلة الانتظار. حاول مرة أخرى.');
     }, 10000);
 
-    sb.auth.onAuthStateChange((event, session) => {
+    sb.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
         clearTimeout(timeout);
-        // انتظر قليلاً يتأكد الـ session محفوظ
-        setTimeout(() => {
-          window.location.replace('dashboard.html');
-        }, 500);
+        await saveProfile(session.user);
+        // انتظر ثانيتين حتى تُحفظ الـ session
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        window.location.replace('dashboard.html');
       }
     });
 
   } catch (err) {
     showError('تعذر تسجيل الدخول: ' + (err.message || 'خطأ غير معروف'));
+  }
+}
+
+async function saveProfile(user) {
+  try {
+    const name = user.user_metadata?.full_name || 
+                 user.user_metadata?.name || 
+                 user.email;
+    
+    await sb.from('profiles').upsert({
+      id: user.id,
+      full_name: name,
+      phone: user.user_metadata?.phone || '',
+      business_type: user.user_metadata?.business_type || '',
+      plan: 'trial',
+      trial_ends: new Date(Date.now() + 14*24*60*60*1000).toISOString(),
+      created_at: new Date().toISOString()
+    }, { onConflict: 'id', ignoreDuplicates: true });
+  } catch (e) {
+    // لا توقف التحويل حتى لو فشل حفظ الـ profile
+    console.log('profile save:', e.message);
   }
 }
 

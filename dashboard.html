@@ -803,21 +803,20 @@ let currentProfile = null;
 //  INIT
 // ══════════════════════════════════
 async function init() {
-  // أعطِ Supabase وقتاً كافياً يحفظ الـ session في localStorage
-  await new Promise(resolve => setTimeout(resolve, 800));
+  // انتظر الـ session تكون جاهزة
+  await new Promise(resolve => setTimeout(resolve, 1000));
   
-  const { data: { session } } = await sb.auth.getSession();
+  let { data: { session } } = await sb.auth.getSession();
 
   if (!session) {
-    // محاولة أخيرة بعد ثانية إضافية
+    // محاولة ثانية بعد ثانية إضافية
     await new Promise(resolve => setTimeout(resolve, 1000));
     const { data: { session: session2 } } = await sb.auth.getSession();
     if (!session2) {
       window.location.replace('signup.html');
       return;
     }
-    await loadDashboard(session2);
-    return;
+    session = session2;
   }
 
   await loadDashboard(session);
@@ -833,9 +832,28 @@ async function loadDashboard(session) {
 
   currentUser = session.user;
 
-  // Load profile
-  const { data: profile } = await sb.from('profiles')
+  // Load profile - أو أنشئه إذا ما كان موجود
+  let { data: profile } = await sb.from('profiles')
     .select('*').eq('id', currentUser.id).single();
+
+  // إذا ما في profile، أنشئه الآن
+  if (!profile) {
+    const name = currentUser.user_metadata?.full_name || 
+                 currentUser.user_metadata?.name || 
+                 currentUser.email;
+    await sb.from('profiles').upsert({
+      id: currentUser.id,
+      full_name: name,
+      plan: 'trial',
+      trial_ends: new Date(Date.now() + 14*24*60*60*1000).toISOString(),
+      created_at: new Date().toISOString()
+    }, { onConflict: 'id', ignoreDuplicates: true });
+    
+    // اقرأه مرة ثانية
+    const { data: newProfile } = await sb.from('profiles')
+      .select('*').eq('id', currentUser.id).single();
+    profile = newProfile;
+  }
 
   currentProfile = profile;
 
