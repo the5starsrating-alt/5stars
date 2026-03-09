@@ -266,7 +266,7 @@ body{
 
 <script>
 // تحقق فوراً قبل أي شيء — إذا في code في URL يعني جاي من Google
-if (window.location.search.includes('code=') || window.location.hash.includes('access_token')) {
+if (window.location.search.includes('code=') || window.location.hash.includes('access_token') || window.location.search.includes('error=')) {
   document.getElementById('authLoading').style.display = 'flex';
 }
 </script>
@@ -416,7 +416,7 @@ const sb = createClient(
       persistSession: true,
       autoRefreshToken: true,
       storageKey: 'sb-xdmbwtnpadjeinclmffh-auth-token',
-      flowType: 'pkce'
+      flowType: 'implicit'
     }
   }
 );
@@ -634,26 +634,13 @@ async function saveProfile(user) {
 }
 
 async function handleAuthRedirect() {
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get('code');
+  // implicit flow: الـ token يجي في الـ hash (#access_token=...)
+  // pkce flow: الـ code يجي في الـ query (?code=...)
+  // Supabase JS يعالج كليهما تلقائياً عبر detectSessionInUrl
 
-  // إذا في code — يعني جاي من Google OAuth
-  if (code) {
-    try {
-      const { data, error } = await sb.auth.exchangeCodeForSession(code);
-      if (error) throw error;
-      if (data.session) {
-        await saveProfile(data.session.user);
-        window.location.replace('dashboard.html');
-        return;
-      }
-    } catch(e) {
-      console.error('Exchange error:', e.message);
-      document.getElementById('authLoading').style.display = 'none';
-    }
-  }
+  // أعطِ Supabase ثانية يعالج الـ URL
+  await new Promise(resolve => setTimeout(resolve, 800));
 
-  // فحص إذا في session موجودة أصلاً
   const { data: { session } } = await sb.auth.getSession();
   if (session) {
     await saveProfile(session.user);
