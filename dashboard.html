@@ -717,82 +717,6 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
       </div>
     </div>
   </div>
-    <div class="stats-grid">
-      <div class="stat-card blue">
-        <div class="stat-icon">⭐</div>
-        <div class="stat-num" id="statRating">4.2</div>
-        <div class="stat-label">متوسط التقييم</div>
-        <div class="stat-change up">↑ +0.3 هذا الشهر</div>
-      </div>
-      <div class="stat-card gold">
-        <div class="stat-icon">📝</div>
-        <div class="stat-num" id="statTotal">24</div>
-        <div class="stat-label">إجمالي التقييمات</div>
-        <div class="stat-change up">↑ +8 هذا الشهر</div>
-      </div>
-      <div class="stat-card green">
-        <div class="stat-icon">✅</div>
-        <div class="stat-num" id="statReplied">18</div>
-        <div class="stat-label">تم الرد عليها</div>
-        <div class="stat-change up">↑ 75% نسبة الرد</div>
-      </div>
-      <div class="stat-card red">
-        <div class="stat-icon">⏳</div>
-        <div class="stat-num" id="statPending">6</div>
-        <div class="stat-label">تنتظر الرد</div>
-        <div class="stat-change down">↓ يحتاج اهتمام</div>
-      </div>
-    </div>
-
-    <!-- RECENT REVIEWS -->
-    <div class="card">
-      <div class="card-head">
-        <div class="card-title">⭐ آخر التقييمات</div>
-        <button class="btn btn-outline" onclick="showSection('reviews')">عرض الكل ←</button>
-      </div>
-      <div id="recentReviews">
-        <div class="review-item">
-          <div class="review-header">
-            <div>
-              <div class="reviewer-name">أحمد المطيري</div>
-              <div class="stars">★★★★★</div>
-              <div class="review-date">منذ يومين</div>
-            </div>
-            <span class="badge-replied">✓ تم الرد</span>
-          </div>
-          <div class="review-text">خدمة ممتازة والطعام كان رائع جداً! سأعود مرة أخرى بإذن الله.</div>
-          <div class="review-reply">
-            <div class="review-reply-label">ردك</div>
-            شكراً جزيلاً أحمد على كلماتك الجميلة! يسعدنا خدمتك دائماً ونتطلع لزيارتك القادمة 🌟
-          </div>
-        </div>
-        <div class="review-item">
-          <div class="review-header">
-            <div>
-              <div class="reviewer-name">نورة السعيد</div>
-              <div class="stars">★★★☆☆</div>
-              <div class="review-date">منذ 3 أيام</div>
-            </div>
-            <span class="badge-pending">⏳ لم يُرد بعد</span>
-          </div>
-          <div class="review-text">الطعام كان لذيذ لكن الانتظار كان طويلاً نوعاً ما.</div>
-          <button class="btn btn-primary" style="margin-top:10px;font-size:12px;" onclick="generateReply(this)">🤖 رد تلقائي بالذكاء الاصطناعي</button>
-        </div>
-        <div class="review-item">
-          <div class="review-header">
-            <div>
-              <div class="reviewer-name">فهد العتيبي</div>
-              <div class="stars">★★☆☆☆</div>
-              <div class="review-date">منذ 5 أيام</div>
-            </div>
-            <span class="badge-negative">⚠️ سلبي</span>
-          </div>
-          <div class="review-text">الخدمة كانت بطيئة والطلب جاء ناقص.</div>
-          <button class="btn btn-gold" style="margin-top:10px;font-size:12px;" onclick="generateReply(this)">🤖 رد احترافي على التقييم السلبي</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- ═══ SECTION: REVIEWS ═══ -->
   <div class="section" id="sec-reviews">
@@ -808,10 +732,10 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
 
     <div class="card">
       <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
-        <button class="btn btn-outline active-filter" onclick="filterReviews('all')">الكل</button>
-        <button class="btn btn-outline" onclick="filterReviews('pending')">⏳ لم يُرد</button>
-        <button class="btn btn-outline" onclick="filterReviews('replied')">✅ تم الرد</button>
-        <button class="btn btn-outline" onclick="filterReviews('negative')">⚠️ سلبية</button>
+        <button class="btn btn-outline active-filter" onclick="filterReviews('all', this)">الكل</button>
+        <button class="btn btn-outline" onclick="filterReviews('pending', this)">⏳ لم يُرد</button>
+        <button class="btn btn-outline" onclick="filterReviews('replied', this)">✅ تم الرد</button>
+        <button class="btn btn-outline" onclick="filterReviews('negative', this)">⚠️ سلبية</button>
       </div>
 
       <div id="reviewsList">
@@ -1527,11 +1451,20 @@ ${starCount <= 2 ? 'التقييم سلبي: اعتذر بصدق واعرض ال
   {"style":"Friendly","lang":"en","text":"..."}
 ]}`;
 
+    // ⚠️ تحذير أمني: لا تضع API key مباشرة في كود الواجهة الأمامية في الإنتاج
+    // استخدم proxy/edge function بدلاً من ذلك
+    // لتفعيل الذكاء الاصطناعي: أضف ANTHROPIC_API_KEY هنا أو في proxy
+    const ANTHROPIC_API_KEY = ''; // ← ضع مفتاحك هنا للتطوير المحلي فقط
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-allow-browser': 'true'
+      },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 1000,
         messages: [{ role: 'user', content: prompt }]
       })
@@ -1656,7 +1589,6 @@ function selectReply(div, text, lang) {
 
 function regenerateReplies() {
   if (!currentReviewItem) return;
-  const btn = currentReviewItem.querySelector('[onclick*="generateReply"]') || { closest: () => currentReviewItem };
   generateReply({ closest: () => currentReviewItem });
 }
 
@@ -1715,9 +1647,9 @@ function filterDemo(type) {
 // ══════════════════════════════════
 //  FILTER REVIEWS
 // ══════════════════════════════════
-function filterReviews(type) {
+function filterReviews(type, el) {
   document.querySelectorAll('.active-filter').forEach(b => b.classList.remove('active-filter'));
-  event.target.classList.add('active-filter');
+  if (el) el.classList.add('active-filter');
 }
 
 // ══════════════════════════════════
@@ -1737,8 +1669,8 @@ async function saveGBSettings() {
   const mapsUrl = document.getElementById('gbMapsUrl').value.trim();
   const reviewUrl = document.getElementById('gbReviewUrl').value.trim();
 
-  if (!name || !mapsUrl) {
-    alert('يرجى إدخال اسم المشروع ورابط Google Maps');
+  if (!name) {
+    alert('يرجى إدخال اسم المشروع');
     return;
   }
 

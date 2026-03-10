@@ -571,8 +571,7 @@ async function loginWithGoogle() {
     const { error } = await sb.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin + '/signup.html',
-        storageKey: 'sb-xdmbwtnpadjeinclmffh-auth-token'
+        redirectTo: window.location.origin + '/auth-callback.html'
       }
     });
     if (error) throw error;
