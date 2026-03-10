@@ -1,9 +1,4 @@
-bash
-
-cat /home/claude/dashboard.html
-Output
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -391,6 +386,9 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
 .alert.show { display:block; }
 .alert-success { background:#F0FDF4; border:1px solid rgba(22,163,74,0.2); color:var(--green); }
 .alert-error { background:#FEF2F2; border:1px solid rgba(220,38,38,0.2); color:var(--red); }
+
+/* ═══════════ FILTER ACTIVE ═══════════ */
+.active-filter { background:var(--blue3) !important; color:#fff !important; border-color:var(--blue3) !important; }
 
 /* ═══════════ EMPTY STATE ═══════════ */
 .empty-state { text-align:center; padding:60px 20px; color:var(--muted); }
@@ -1129,6 +1127,36 @@ function showSection(name) {
   });
 }
 
+/*
+ * ══════════════════════════════════════════════════════════════
+ *  Supabase Schema المطلوب (profiles table):
+ *  -------------------------------------------
+ *  id              uuid        PK (references auth.users.id)
+ *  full_name       text        اسم المستخدم الكامل
+ *  email           text        البريد الإلكتروني
+ *  phone           text        رقم واتساب
+ *  business_type   text        نوع النشاط (restaurant/cafe/salon/clinic/retail/other)
+ *  business_name   text        اسم المشروع على Google Business
+ *  plan            text        نوع الاشتراك (trial/basic/pro)
+ *  trial_ends      timestamptz تاريخ انتهاء التجربة المجانية
+ *  google_maps_url text        رابط Google Maps
+ *  google_review_url text      رابط كتابة تقييم
+ *  created_at      timestamptz تاريخ الإنشاء
+ *
+ *  SQL لإنشاء الجدول:
+ *  CREATE TABLE public.profiles (
+ *    id uuid REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+ *    full_name text, email text, phone text,
+ *    business_type text, business_name text, plan text DEFAULT 'trial',
+ *    trial_ends timestamptz, google_maps_url text, google_review_url text,
+ *    created_at timestamptz DEFAULT now()
+ *  );
+ *  ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ *  CREATE POLICY "Users can manage own profile"
+ *    ON public.profiles FOR ALL USING (auth.uid() = id);
+ * ══════════════════════════════════════════════════════════════
+ */
+
 // ══════════════════════════════════
 //  SUPABASE
 // ══════════════════════════════════
@@ -1155,7 +1183,7 @@ let currentProfile = null;
 // ══════════════════════════════════
 async function init() {
   try {
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise(resolve => setTimeout(resolve, 400));
     let { data: { session } } = await sb.auth.getSession();
 
     if (!session) {
@@ -1198,6 +1226,7 @@ async function loadDashboard(session) {
     await sb.from('profiles').upsert({
       id: currentUser.id,
       full_name: name,
+      email: currentUser.email,
       plan: 'trial',
       trial_ends: new Date(Date.now() + 14*24*60*60*1000).toISOString(),
       created_at: new Date().toISOString()
@@ -1246,8 +1275,19 @@ async function loadDashboard(session) {
 
   document.getElementById('loadingOverlay').style.display = 'none';
 
-  // Show connect banner if no google connected
-  const gbName = localStorage.getItem('gb_name');
+  // تحميل Google Business: أولاً من DB ثم من localStorage كـ fallback
+  const dbBusinessName = profile?.business_name;
+  const dbMapsUrl = profile?.google_maps_url;
+  const dbReviewUrl = profile?.google_review_url;
+
+  if (dbBusinessName) {
+    // حدّث localStorage من DB
+    localStorage.setItem('gb_name', dbBusinessName);
+    if (dbMapsUrl)   localStorage.setItem('gb_maps', dbMapsUrl);
+    if (dbReviewUrl) localStorage.setItem('gb_review', dbReviewUrl);
+  }
+
+  const gbName = localStorage.getItem('gb_name') || dbBusinessName;
   if (!gbName) {
     document.getElementById('connectBanner').style.display = 'flex';
   }
@@ -1278,10 +1318,14 @@ function generateQR() {
 
 function downloadQR() {
   const canvas = document.querySelector('#qrcode canvas');
-  if (!canvas) return alert('أنشئ QR Code أولاً');
+  if (!canvas) {
+    showDashAlert('أنشئ QR Code أولاً — أدخل رابط Google Business', 'error');
+    return;
+  }
   const a = document.createElement('a');
-  a.download = '5tars-qr.png';
-  a.href = canvas.toDataURL();
+  const bizName = document.getElementById('businessName').value.trim() || '5tars';
+  a.download = bizName + '-qr.png';
+  a.href = canvas.toDataURL('image/png');
   a.click();
 }
 
@@ -1650,6 +1694,17 @@ function filterDemo(type) {
 function filterReviews(type, el) {
   document.querySelectorAll('.active-filter').forEach(b => b.classList.remove('active-filter'));
   if (el) el.classList.add('active-filter');
+
+  // تصفية التقييمات بناءً على النوع
+  const items = document.querySelectorAll('#reviewsList .review-item');
+  items.forEach(item => {
+    const badge = item.querySelector('[class^="badge-"]');
+    let show = true;
+    if (type === 'pending')  show = badge && badge.classList.contains('badge-pending');
+    if (type === 'replied')  show = badge && badge.classList.contains('badge-replied');
+    if (type === 'negative') show = badge && badge.classList.contains('badge-negative');
+    item.style.display = show ? '' : 'none';
+  });
 }
 
 // ══════════════════════════════════
@@ -1670,29 +1725,47 @@ async function saveGBSettings() {
   const reviewUrl = document.getElementById('gbReviewUrl').value.trim();
 
   if (!name) {
-    alert('يرجى إدخال اسم المشروع');
+    showDashAlert('يرجى إدخال اسم المشروع على Google', 'error');
     return;
   }
 
-  // Save to profiles
-  if (currentUser) {
-    await sb.from('profiles').update({
-      full_name: name,
-      google_maps_url: mapsUrl,
-      google_review_url: reviewUrl
-    }).eq('id', currentUser.id);
+  // التحقق من صحة الروابط إذا أُدخلت
+  if (mapsUrl && !mapsUrl.startsWith('http')) {
+    showDashAlert('رابط Google Maps يجب أن يبدأ بـ https://', 'error');
+    return;
+  }
+  if (reviewUrl && !reviewUrl.startsWith('http')) {
+    showDashAlert('رابط المراجعة يجب أن يبدأ بـ https://', 'error');
+    return;
   }
 
-  // Save to localStorage
+  // حفظ في profiles — نستخدم business_name وليس full_name
+  if (currentUser) {
+    const { error } = await sb.from('profiles').update({
+      business_name: name,
+      google_maps_url: mapsUrl || null,
+      google_review_url: reviewUrl || null
+    }).eq('id', currentUser.id);
+
+    if (error) {
+      console.error('GB save error:', error);
+      // إذا فشل DB نكمل بـ localStorage
+    }
+  }
+
+  // حفظ في localStorage كـ fallback
   localStorage.setItem('gb_name', name);
   localStorage.setItem('gb_maps', mapsUrl);
   localStorage.setItem('gb_review', reviewUrl);
 
-  // Update QR
+  // تحديث QR بالرابط الجديد
   if (reviewUrl) {
     document.getElementById('googleLink').value = reviewUrl;
     generateQR();
   }
+
+  // تحديث filterBusinessName
+  document.getElementById('filterBusinessName').textContent = name;
 
   showGBConnected(name, mapsUrl, reviewUrl);
 }
@@ -1705,18 +1778,32 @@ function showGBConnected(name, mapsUrl, reviewUrl) {
   document.getElementById('gbShowMaps').textContent = mapsUrl || '—';
   document.getElementById('gbShowReview').textContent = reviewUrl || '—';
 
-  // Update connect banner
+  // تحديث شعار الربط في الـ overview
   document.getElementById('connectBanner').style.display = 'none';
+
+  // تحديث بطاقة الإعدادات
+  updateSettingsGoogleStatus(true, name);
 }
 
-function disconnectGB() {
+async function disconnectGB() {
   if (!confirm('هل تريد فصل ربط Google Business؟')) return;
   localStorage.removeItem('gb_name');
   localStorage.removeItem('gb_maps');
   localStorage.removeItem('gb_review');
+
+  // حذف من DB أيضاً
+  if (currentUser) {
+    await sb.from('profiles').update({
+      business_name: null,
+      google_maps_url: null,
+      google_review_url: null
+    }).eq('id', currentUser.id);
+  }
+
   document.getElementById('gbConnected').style.display = 'none';
   document.getElementById('gbConnectCard').style.display = 'block';
   document.getElementById('connectBanner').style.display = 'flex';
+  updateSettingsGoogleStatus(false);
 }
 
 function loadGBFromStorage() {
@@ -1727,7 +1814,32 @@ function loadGBFromStorage() {
     showGBConnected(name, mapsUrl, reviewUrl);
     if (reviewUrl) {
       document.getElementById('googleLink').value = reviewUrl;
+      generateQR();
     }
+    // تحديث بطاقة الإعدادات
+    updateSettingsGoogleStatus(true, name);
+    // تحديث اسم المشروع في الفلتر
+    document.getElementById('filterBusinessName').textContent = name;
+  } else {
+    updateSettingsGoogleStatus(false);
+  }
+}
+
+function updateSettingsGoogleStatus(connected, name) {
+  const el = document.getElementById('googleStatus');
+  if (!el) return;
+  if (connected) {
+    el.style.background = '#F0FDF4';
+    el.innerHTML = `
+      <div style="font-size:20px;margin-bottom:6px;">✅</div>
+      <div style="font-size:13px;color:#15803D;font-weight:700;">تم الربط: ${name}</div>
+    `;
+  } else {
+    el.style.background = 'var(--blue4)';
+    el.innerHTML = `
+      <div style="font-size:24px;margin-bottom:8px;">🔗</div>
+      <div style="font-size:13px;color:var(--muted)">لم يتم الربط بعد</div>
+    `;
   }
 }
 
@@ -1827,17 +1939,69 @@ fixChartGrid();
 //  SAVE SETTINGS
 // ══════════════════════════════════
 async function saveSettings() {
-  if (!currentUser) return;
+  if (!currentUser) {
+    showDashAlert('يرجى تسجيل الدخول أولاً', 'error');
+    return;
+  }
+  const newName = document.getElementById('settingName').value.trim();
+  const newPhone = document.getElementById('settingPhone').value.trim();
+  const newBiz = document.getElementById('settingBusiness').value;
+
+  if (!newName) {
+    showDashAlert('يرجى إدخال الاسم الكامل', 'error');
+    return;
+  }
+
   const { error } = await sb.from('profiles').update({
-    full_name: document.getElementById('settingName').value,
-    phone: document.getElementById('settingPhone').value,
-    business_type: document.getElementById('settingBusiness').value
+    full_name: newName,
+    phone: newPhone,
+    business_type: newBiz
   }).eq('id', currentUser.id);
 
   if (!error) {
-    alert('✅ تم حفظ التغييرات بنجاح!');
-    document.getElementById('userName').textContent = document.getElementById('settingName').value;
+    // تحديث الواجهة
+    document.getElementById('userName').textContent = newName;
+    document.getElementById('userAvatar').textContent = newName.charAt(0);
+    document.getElementById('headerName').textContent = newName.split(' ')[0];
+    const mName = document.getElementById('mobileUserName');
+    const mAvatar = document.getElementById('mobileAvatar');
+    if (mName) mName.textContent = newName.split(' ')[0];
+    if (mAvatar) mAvatar.textContent = newName.charAt(0);
+    showDashAlert('✅ تم حفظ التغييرات بنجاح!', 'success');
+  } else {
+    console.error('Settings save error:', error);
+    showDashAlert('حدث خطأ أثناء الحفظ. حاول مرة أخرى.', 'error');
   }
+}
+
+// ══════════════════════════════════
+//  DASHBOARD ALERT HELPER
+// ══════════════════════════════════
+function showDashAlert(msg, type = 'success') {
+  // إزالة أي alert قديم
+  const old = document.getElementById('dashGlobalAlert');
+  if (old) old.remove();
+
+  const div = document.createElement('div');
+  div.id = 'dashGlobalAlert';
+  div.style.cssText = `
+    position:fixed;top:24px;left:50%;transform:translateX(-50%);
+    z-index:9999;padding:12px 24px;border-radius:12px;
+    font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;
+    box-shadow:0 8px 32px rgba(0,0,0,0.15);
+    ${type === 'success'
+      ? 'background:#F0FDF4;border:1px solid #86efac;color:#15803D;'
+      : 'background:#FEF2F2;border:1px solid #fca5a5;color:#DC2626;'}
+    animation:slideDown 0.3s ease;
+  `;
+  div.textContent = msg;
+  document.body.appendChild(div);
+
+  const style = document.createElement('style');
+  style.textContent = '@keyframes slideDown{from{top:0;opacity:0}to{top:24px;opacity:1}}';
+  document.head.appendChild(style);
+
+  setTimeout(() => div.remove(), 3500);
 }
 
 // ══════════════════════════════════
@@ -1849,17 +2013,17 @@ async function handleLogout() {
 }
 
 async function fetchReviews() {
-  alert('جاري ربط Google Business API... قريباً! 🚀');
+  showDashAlert('🚀 Google Business API قادم قريباً! ستتمكن من جلب تقييماتك الحقيقية تلقائياً.', 'success');
 }
 
-// START
+// START — أظهر زر "تخطي" بعد 3 ثوان إذا ما انتهى التحميل
 setTimeout(() => {
   const skip = document.getElementById('loadingSkip');
   const overlay = document.getElementById('loadingOverlay');
   if (skip && overlay && overlay.style.display !== 'none') {
     skip.style.display = 'block';
   }
-}, 4000);
+}, 3000);
 
 init();
 </script>

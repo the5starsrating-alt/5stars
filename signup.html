@@ -1,9 +1,4 @@
-bash
-
-cat /home/claude/signup.html
-Output
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -603,6 +598,8 @@ async function handleForgotPassword() {
 // ══════════════════════════════════
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter') {
+    // لا تفعل شيء إذا كانت شاشة النجاح ظاهرة
+    if (document.getElementById('successState').style.display === 'block') return;
     const signupVisible = document.getElementById('formSignup').style.display !== 'none';
     if (signupVisible) handleSignup();
     else handleLogin();
@@ -621,6 +618,7 @@ async function saveProfile(user) {
     await sb.from('profiles').upsert({
       id: user.id,
       full_name: name,
+      email: user.email,
       plan: 'trial',
       trial_ends: new Date(Date.now() + 14*24*60*60*1000).toISOString()
     }, { onConflict: 'id', ignoreDuplicates: true });
@@ -644,9 +642,9 @@ async function handleAuthRedirect() {
 
 handleAuthRedirect();
 
-// backup
+// backup — فقط عند تسجيل دخول جديد (ليس عند تحديث الـ token)
 sb.auth.onAuthStateChange(async (event, session) => {
-  if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+  if (event === 'SIGNED_IN' && session) {
     await saveProfile(session.user);
     window.location.replace('dashboard.html');
   }
