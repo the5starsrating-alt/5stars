@@ -599,19 +599,14 @@ document.addEventListener('keydown', e => {
 //  CHECK IF ALREADY LOGGED IN
 // ══════════════════════════════════
 // فقط حوّل إذا المستخدم مو في عملية تسجيل نشطة
-// تحقق من الجلسة - بس إذا مو قادم من صفحة رئيسية
+// تحقق من الجلسة
 sb.auth.getSession().then(({ data: { session } }) => {
   if (session) {
-    // إذا قادم من رابط خارجي أو مباشرة للصفحة - حوله للوحة
-    const referrer = document.referrer;
-    const comingFromMainSite = referrer.includes('the5starsrating.com') 
-      || referrer.includes('vercel.app');
-    
-    // إذا قادم من الصفحة الرئيسية بضغطة زر - لا تحول (يريد التسجيل)
-    // إذا كتب الرابط مباشرة أو من مكان آخر - حوله للوحة
-    if (!comingFromMainSite) {
-      window.location.href = 'dashboard.html';
-    }
+    const url = new URLSearchParams(window.location.search);
+    // لا تحول إذا في رابط تأكيد
+    if (url.get('token_hash') || url.get('access_token') || url.get('confirmed')) return;
+    // مسجل دخول - حوله للوحة
+    window.location.href = 'dashboard.html';
   }
 });
 </script>

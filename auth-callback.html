@@ -91,80 +91,34 @@ sb.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN' && session) {
     document.getElementById('subtitle').textContent = 'تم تسجيل الدخول! جاري التحويل...';
     
-    // Save session
+    const user = session.user;
+    const name = user.user_metadata?.full_name 
+      || user.user_metadata?.name 
+      || user.email;
+    const createdAt = new Date(user.created_at).getTime();
+    const isNewUser = (Date.now() - createdAt) < 60000; // أقل من دقيقة = جديد
+
+    // أنشئ أو حدّث الـ profile
     try {
-      localStorage.setItem(
-        'sb-xdmbwtnpadjeinclmffh-auth-token',
-        JSON.stringify({
-          access_token: session.access_token,
-          refresh_token: session.refresh_token,
-          expires_at: session.expires_at,
-          user: session.user
-        })
-      );
-    } catch(e) {}
+      await sb.from('profiles').upsert({
+        id: user.id,
+        full_name: name,
+        plan: 'trial',
+        trial_ends: new Date(Date.now() + 14*24*60*60*1000).toISOString()
+      }, { onConflict: 'id', ignoreDuplicates: true });
+    } catch(e) { console.log('profile upsert:', e.message); }
 
-    try {
-      const user = session.user;
-      const name = user.user_metadata?.full_name 
-        || user.user_metadata?.name 
-        || user.email;
-      const email = user.email;
-      const createdAt = new Date(user.created_at).getTime();
-      const now = Date.now();
-      const isNewUser = (now - createdAt) < 30000; // أقل من 30 ثانية = مستخدم جديد
-
-      // Check if profile exists
-      const { data: existingProfile } = await sb
-        .from('profiles')
-        .select('id, plan, trial_ends, phone')
-        .eq('id', user.id)
-        .single();
-
-      if (!existingProfile) {
-        // ═══ مستخدم جديد تماماً ═══
-        // 1. تحقق من رقم الجوال (منع التحايل)
-        // نحفظ الـ profile أولاً
-        await sb.from('profiles').upsert({
-          id: user.id,
-          full_name: name,
-          email: email,
-          plan: 'trial',
-          trial_ends: new Date(Date.now() + 14*24*60*60*1000).toISOString(),
-          created_at: new Date().toISOString()
-        }, { onConflict: 'id', ignoreDuplicates: true });
-
-        // 2. سجّل التسجيل الجديد لمنع التحايل
-        await sb.from('registrations_log').insert({
-          user_id: user.id,
-          email: email,
-          provider: user.app_metadata?.provider || 'email',
-          ip_fingerprint: navigator.userAgent + screen.width + screen.height,
-          registered_at: new Date().toISOString()
-        }).then(() => {}).catch(() => {});
-
-        // 3. أرسل إيميل ترحيبي للمستخدم الجديد عبر Google
-        document.getElementById('title').textContent = '🎉 أهلاً بك في 5tars!';
-        document.getElementById('subtitle').textContent = 'تجربتك المجانية 14 يوم بدأت الآن ✨';
-
-        setTimeout(() => {
-          // Mark as new user in localStorage for welcome modal
-        localStorage.setItem('5tars_new_user', '1');
-        window.location.href = 'dashboard.html';
-        }, 2000);
-
-      } else {
-        // ═══ مستخدم موجود ═══
-        document.getElementById('subtitle').textContent = 'مرحباً بعودتك! جاري التحويل...';
-        setTimeout(() => {
-          window.location.href = 'dashboard.html';
-        }, 1200);
-      }
-
-    } catch(e) {
-      console.error(e);
-      setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
+    // ضع علامة المستخدم الجديد
+    if (isNewUser) {
+      localStorage.setItem('5tars_new_user', '1');
+      document.getElementById('title').textContent = '🎉 أهلاً بك في 5tars!';
+      document.getElementById('subtitle').textContent = 'تجربتك المجانية 14 يوم بدأت الآن ✨';
     }
+
+    // حوّله للوحة التحكم دائماً
+    setTimeout(() => {
+      window.location.href = 'dashboard.html';
+    }, isNewUser ? 2000 : 1000);
   }
   
   if (event === 'SIGNED_OUT') {
