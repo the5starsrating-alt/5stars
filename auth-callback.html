@@ -148,7 +148,9 @@ sb.auth.onAuthStateChange(async (event, session) => {
         document.getElementById('subtitle').textContent = 'تجربتك المجانية 14 يوم بدأت الآن ✨';
 
         setTimeout(() => {
-          window.location.href = 'dashboard.html?new=1';
+          // Mark as new user in localStorage for welcome modal
+        localStorage.setItem('5tars_new_user', '1');
+        window.location.href = 'dashboard.html';
         }, 2000);
 
       } else {

@@ -469,6 +469,7 @@ async function handleSignup() {
       email,
       password,
       options: {
+        emailRedirectTo: window.location.origin + '/auth-callback.html?new=1',
         data: {
           full_name:     name,
           phone:         phone,
@@ -499,7 +500,7 @@ async function handleSignup() {
 
     showSuccessState(
       '🎉 تم إنشاء حسابك!',
-      'تحقق من بريدك الإلكتروني ' + email + ' وانقر رابط التأكيد للدخول لمنصة 5tars. التجربة المجانية 14 يوم تبدأ الآن!'
+      'أرسلنا رابط التأكيد إلى: ' + email + '\n\nافتح بريدك وانقر الرابط للدخول. التجربة المجانية 14 يوم تبدأ فور التأكيد!'
     );
 
   } catch (err) {
@@ -597,8 +598,13 @@ document.addEventListener('keydown', e => {
 // ══════════════════════════════════
 //  CHECK IF ALREADY LOGGED IN
 // ══════════════════════════════════
+// فقط حوّل إذا المستخدم مو في عملية تسجيل نشطة
 sb.auth.getSession().then(({ data: { session } }) => {
   if (session) {
+    // إذا وصل من رابط تأكيد الإيميل - اتركه يكمل
+    const url = new URLSearchParams(window.location.search);
+    if (url.get('type') === 'signup' || url.get('confirmed')) return;
+    // إذا مسجل دخول مسبقاً - حوله للوحة
     window.location.href = 'dashboard.html';
   }
 });
