@@ -599,13 +599,19 @@ document.addEventListener('keydown', e => {
 //  CHECK IF ALREADY LOGGED IN
 // ══════════════════════════════════
 // فقط حوّل إذا المستخدم مو في عملية تسجيل نشطة
+// تحقق من الجلسة - بس إذا مو قادم من صفحة رئيسية
 sb.auth.getSession().then(({ data: { session } }) => {
   if (session) {
-    // إذا وصل من رابط تأكيد الإيميل - اتركه يكمل
-    const url = new URLSearchParams(window.location.search);
-    if (url.get('type') === 'signup' || url.get('confirmed')) return;
-    // إذا مسجل دخول مسبقاً - حوله للوحة
-    window.location.href = 'dashboard.html';
+    // إذا قادم من رابط خارجي أو مباشرة للصفحة - حوله للوحة
+    const referrer = document.referrer;
+    const comingFromMainSite = referrer.includes('the5starsrating.com') 
+      || referrer.includes('vercel.app');
+    
+    // إذا قادم من الصفحة الرئيسية بضغطة زر - لا تحول (يريد التسجيل)
+    // إذا كتب الرابط مباشرة أو من مكان آخر - حوله للوحة
+    if (!comingFromMainSite) {
+      window.location.href = 'dashboard.html';
+    }
   }
 });
 </script>
