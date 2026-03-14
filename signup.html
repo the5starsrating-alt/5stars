@@ -556,7 +556,7 @@ async function loginWithGoogle() {
     const { error } = await sb.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin + '/dashboard.html'
+        redirectTo: window.location.origin + '/auth-callback.html'
       }
     });
     if (error) throw error;
