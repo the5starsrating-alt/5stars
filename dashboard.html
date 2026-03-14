@@ -350,20 +350,23 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
   </div>
 
   <div class="sidebar-nav">
-    <button class="nav-item active" onclick="showSection('overview')">
+    <button class="nav-item active" data-section="overview" onclick="showSection('overview')">
       <span class="ni">📊</span> نظرة عامة
     </button>
-    <button class="nav-item" onclick="showSection('reviews')">
+    <button class="nav-item" data-section="googlebusiness" onclick="showSection('googlebusiness')">
+      <span class="ni">🔗</span> Google Business
+    </button>
+    <button class="nav-item" data-section="reviews" onclick="showSection('reviews')">
       <span class="ni">⭐</span> التقييمات
       <span class="nav-badge" id="pendingBadge">0</span>
     </button>
-    <button class="nav-item" onclick="showSection('qr')">
+    <button class="nav-item" data-section="qr" onclick="showSection('qr')">
       <span class="ni">📱</span> QR Code
     </button>
-    <button class="nav-item" onclick="showSection('filter')">
+    <button class="nav-item" data-section="filter" onclick="showSection('filter')">
       <span class="ni">🛡️</span> فلتر التقييمات
     </button>
-    <button class="nav-item" onclick="showSection('settings')">
+    <button class="nav-item" data-section="settings" onclick="showSection('settings')">
       <span class="ni">⚙️</span> الإعدادات
     </button>
   </div>
@@ -386,7 +389,7 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
         <div class="page-sub">هذا ملخص نشاطك على Google Business</div>
       </div>
       <div class="header-actions">
-        <button class="btn btn-gold" onclick="showSection('qr')">📱 شارك QR Code</button>
+        <button class="btn btn-gold" data-section="qr" onclick="showSection('qr')">📱 شارك QR Code</button>
       </div>
     </div>
 
@@ -432,7 +435,7 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
     <div class="card">
       <div class="card-head">
         <div class="card-title">⭐ آخر التقييمات</div>
-        <button class="btn btn-outline" onclick="showSection('reviews')">عرض الكل ←</button>
+        <button class="btn btn-outline" data-section="reviews" onclick="showSection('reviews')">عرض الكل ←</button>
       </div>
       <div id="recentReviews">
         <div class="review-item">
@@ -479,6 +482,128 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
   </div>
 
   <!-- ═══ SECTION: REVIEWS ═══ -->
+  <!-- ═══ SECTION: GOOGLE BUSINESS ═══ -->
+  <div class="section" id="sec-googlebusiness">
+    <div class="page-header">
+      <div>
+        <div class="page-title">🔗 ربط Google Business</div>
+        <div class="page-sub">اربط مشروعك لمراقبة التقييمات والرد عليها تلقائياً</div>
+      </div>
+    </div>
+
+    <!-- Connect Card -->
+    <div id="gbConnectCard" class="card" style="background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border:none;margin-bottom:20px;">
+      <div style="font-family:'Tajawal',sans-serif;font-size:22px;font-weight:900;margin-bottom:8px;">🚀 اربط Google Business بـ 3 خطوات</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.7);margin-bottom:24px;line-height:1.7;">بعد الربط ستتمكن من مراقبة تقييماتك الحقيقية، الرد عليها بالذكاء الاصطناعي، وتلقي إشعارات فورية على واتساب.</div>
+      <div style="display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap;">
+        <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:14px 16px;font-size:12px;flex:1;min-width:120px;border:1px solid rgba(255,255,255,0.12);">
+          <div style="font-size:20px;font-weight:900;color:var(--gold2);font-family:'Tajawal',sans-serif;margin-bottom:4px;">1</div>
+          <div style="color:rgba(255,255,255,0.8);">ادخل اسم مشروعك على Google</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:14px 16px;font-size:12px;flex:1;min-width:120px;border:1px solid rgba(255,255,255,0.12);">
+          <div style="font-size:20px;font-weight:900;color:var(--gold2);font-family:'Tajawal',sans-serif;margin-bottom:4px;">2</div>
+          <div style="color:rgba(255,255,255,0.8);">أضف رابط صفحتك على Google Maps</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:14px 16px;font-size:12px;flex:1;min-width:120px;border:1px solid rgba(255,255,255,0.12);">
+          <div style="font-size:20px;font-weight:900;color:var(--gold2);font-family:'Tajawal',sans-serif;margin-bottom:4px;">3</div>
+          <div style="color:rgba(255,255,255,0.8);">ابدأ استقبال التنبيهات تلقائياً</div>
+        </div>
+      </div>
+      <button onclick="showGBForm()" style="background:linear-gradient(135deg,var(--gold2),var(--gold));color:var(--blue);font-weight:900;font-size:14px;padding:14px 28px;border-radius:12px;border:none;cursor:pointer;font-family:'Cairo',sans-serif;box-shadow:0 6px 24px rgba(212,146,10,0.4);display:inline-flex;align-items:center;gap:8px;">
+        🔗 ربط Google Business الآن
+      </button>
+    </div>
+
+    <!-- Connect Form -->
+    <div class="card" id="gbForm" style="display:none;margin-bottom:20px;">
+      <div style="font-size:15px;font-weight:900;margin-bottom:20px;">📝 أدخل بيانات مشروعك</div>
+
+      <!-- How to get info -->
+      <div style="background:linear-gradient(135deg,var(--blue4),var(--blue5,#F0F4FF));border-radius:14px;padding:20px;margin-bottom:24px;border:1px solid rgba(34,81,211,0.12);">
+        <div style="font-weight:700;color:var(--blue3);margin-bottom:12px;font-size:14px;">📌 كيف تحصل على رابط Google Business؟</div>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--text);">
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <div style="background:var(--blue3);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0;">1</div>
+            <div>افتح <a href="https://maps.google.com" target="_blank" style="color:var(--blue3);font-weight:700;">Google Maps</a> وابحث عن اسم مشروعك</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <div style="background:var(--blue3);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0;">2</div>
+            <div>اضغط مشروعك ← اضغط <strong>"مشاركة"</strong> ← انسخ الرابط</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <div style="background:var(--gold);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0;">3</div>
+            <div>لرابط المراجعة: افتح <a href="https://business.google.com" target="_blank" style="color:var(--blue3);font-weight:700;">Google Business</a> ← <strong>"الحصول على المزيد من المراجعات"</strong> ← انسخ الرابط</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12px;font-weight:700;margin-bottom:6px;">اسم المشروع على Google</label>
+        <input type="text" id="gbBusinessName" placeholder="مثال: مطعم الوادي - الرياض" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:'Cairo',sans-serif;font-size:13px;color:var(--text);outline:none;background:#fff;">
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12px;font-weight:700;margin-bottom:6px;">رابط صفحتك على Google Maps <span style="color:var(--muted);font-weight:400;">(اختياري)</span></label>
+        <input type="url" id="gbMapsUrl" placeholder="https://maps.app.goo.gl/..." style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:'Cairo',sans-serif;font-size:13px;outline:none;background:#fff;">
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <label style="display:block;font-size:12px;font-weight:700;margin-bottom:6px;">رابط كتابة مراجعة ⭐ <span style="color:var(--red);font-size:11px;">مهم للـ QR Code</span></label>
+        <input type="url" id="gbReviewUrl" placeholder="https://g.page/r/XXXX/review" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:'Cairo',sans-serif;font-size:13px;outline:none;background:#fff;">
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;">هذا الرابط سيُستخدم في QR Code لتوجيه العملاء لكتابة تقييم مباشرة</div>
+      </div>
+
+      <div id="gbSaveAlert" style="display:none;background:#F0FDF4;border:1px solid rgba(22,163,74,0.2);color:var(--green);border-radius:10px;padding:12px 16px;font-size:13px;margin-bottom:16px;"></div>
+      <div id="gbErrorAlert" style="display:none;background:#FEF2F2;border:1px solid rgba(220,38,38,0.2);color:var(--red);border-radius:10px;padding:12px 16px;font-size:13px;margin-bottom:16px;"></div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="saveGBSettings()">💾 حفظ وربط</button>
+        <button class="btn btn-outline" onclick="document.getElementById('gbForm').style.display='none';document.getElementById('gbConnectCard').style.display='block'">إلغاء</button>
+      </div>
+    </div>
+
+    <!-- Connected Status -->
+    <div class="card" id="gbConnected" style="display:none;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:16px;padding:16px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-radius:12px;margin-bottom:20px;border:1px solid #86efac;">
+        <div style="font-size:32px;">✅</div>
+        <div>
+          <div style="font-weight:700;color:#16a34a;font-size:15px;">تم الربط بنجاح!</div>
+          <div style="font-size:13px;color:#15803d;" id="gbConnectedName">اسم المشروع</div>
+        </div>
+        <button class="btn btn-outline" style="margin-right:auto;font-size:12px;" onclick="disconnectGB()">فصل الربط</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div style="background:var(--bg);border-radius:12px;padding:16px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:8px;">رابط Google Maps</div>
+          <div style="font-size:12px;color:var(--blue3);word-break:break-all;" id="gbShowMaps">—</div>
+        </div>
+        <div style="background:var(--bg);border-radius:12px;padding:16px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:8px;">رابط المراجعات</div>
+          <div style="font-size:12px;color:var(--blue3);word-break:break-all;" id="gbShowReview">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- How it works -->
+    <div class="card">
+      <div style="font-size:15px;font-weight:900;margin-bottom:16px;">❓ كيف يعمل الربط؟</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--blue4);color:var(--blue3);display:flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0;">1</div>
+          <div><div style="font-weight:700;margin-bottom:4px;">أضف رابط مشروعك</div><div style="font-size:13px;color:var(--muted);">رابط صفحتك على Google Maps ورابط كتابة المراجعات</div></div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--blue4);color:var(--blue3);display:flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0;">2</div>
+          <div><div style="font-weight:700;margin-bottom:4px;">شارك QR Code مع عملائك</div><div style="font-size:13px;color:var(--muted);">يمسح العميل الـ QR Code ويصل مباشرة لصفحة كتابة مراجعة</div></div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--blue4);color:var(--blue3);display:flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0;">3</div>
+          <div><div style="font-weight:700;margin-bottom:4px;">تلقَّ إشعارات فورية</div><div style="font-size:13px;color:var(--muted);">يصلك إشعار واتساب فور كتابة أي تقييم جديد</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="section" id="sec-reviews">
     <div class="page-header">
       <div>
@@ -576,7 +701,7 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
             <input type="url" id="googleLink" placeholder="https://g.page/r/YOUR_REVIEW_LINK" oninput="generateQR()">
           </div>
           <div class="field">
-            <label>اسم المحل (يظهر في الـ QR)</label>
+            <label>اسم المشروع (يظهر في الـ QR)</label>
             <input type="text" id="businessName" placeholder="مطعم الوادي" oninput="generateQR()">
           </div>
           <div class="field">
@@ -587,7 +712,7 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
           <div style="background:var(--blue4);border-radius:10px;padding:14px;font-size:12px;color:var(--blue2);line-height:1.8;">
             <strong>📌 كيف تحصل على رابط Google Business؟</strong><br>
             1. افتح Google Maps<br>
-            2. ابحث عن محلك<br>
+            2. ابحث عن مشروعك<br>
             3. اضغط "كتابة مراجعة"<br>
             4. انسخ الرابط من المتصفح
           </div>
@@ -791,6 +916,9 @@ async function init() {
 
   // Generate initial QR
   generateQR();
+
+  // Load Google Business + Chart
+  setTimeout(() => { loadGBFromStorage(); initChart(); }, 150);
 }
 
 // ══════════════════════════════════
@@ -905,10 +1033,122 @@ function filterReviews(type) {
 }
 
 // ══════════════════════════════════
-//  CONNECT GOOGLE
+//  GOOGLE BUSINESS FUNCTIONS
 // ══════════════════════════════════
 function connectGoogle() {
-  alert('قريباً! ربط Google Business API سيكون متاحاً في التحديث القادم 🚀');
+  showSection('googlebusiness');
+}
+
+function showGBForm() {
+  document.getElementById('gbConnectCard').style.display = 'none';
+  document.getElementById('gbForm').style.display = 'block';
+}
+
+async function saveGBSettings() {
+  const name      = document.getElementById('gbBusinessName').value.trim();
+  const mapsUrl   = document.getElementById('gbMapsUrl').value.trim();
+  const reviewUrl = document.getElementById('gbReviewUrl').value.trim();
+
+  if (!name) {
+    alert('يرجى إدخال اسم المشروع');
+    return;
+  }
+
+  // Save to Supabase profiles
+  if (currentUser) {
+    await sb.from('profiles').update({
+      full_name: name,
+      google_maps_url: mapsUrl,
+      google_review_url: reviewUrl
+    }).eq('id', currentUser.id);
+  }
+
+  // Save to localStorage as backup
+  localStorage.setItem('gb_name',   name);
+  localStorage.setItem('gb_maps',   mapsUrl);
+  localStorage.setItem('gb_review', reviewUrl);
+
+  // Update QR Code link
+  if (reviewUrl) {
+    const gl = document.getElementById('googleLink');
+    if (gl) { gl.value = reviewUrl; generateQR(); }
+  }
+
+  // Update filter page business name
+  const fn = document.getElementById('filterBusinessName');
+  if (fn) fn.textContent = name;
+
+  // Show connected state
+  showGBConnected(name, mapsUrl, reviewUrl);
+
+  // Update settings status
+  const gs = document.getElementById('googleStatus');
+  if (gs) gs.innerHTML = `<div style="color:#16a34a;font-weight:700;">✅ ${name}</div><div style="font-size:12px;color:var(--muted);">متصل</div>`;
+}
+
+function showGBConnected(name, mapsUrl, reviewUrl) {
+  const form    = document.getElementById('gbForm');
+  const card    = document.getElementById('gbConnectCard');
+  const conn    = document.getElementById('gbConnected');
+  const banner  = document.getElementById('connectBanner');
+
+  if (form)   form.style.display   = 'none';
+  if (card)   card.style.display   = 'none';
+  if (conn)   conn.style.display   = 'block';
+  if (banner) banner.style.display = 'none';
+
+  const nameEl   = document.getElementById('gbConnectedName');
+  const mapsEl   = document.getElementById('gbShowMaps');
+  const reviewEl = document.getElementById('gbShowReview');
+
+  if (nameEl)   nameEl.textContent   = name;
+  if (mapsEl)   mapsEl.textContent   = mapsUrl   || '—';
+  if (reviewEl) reviewEl.textContent = reviewUrl || '—';
+}
+
+function disconnectGB() {
+  if (!confirm('هل تريد فصل ربط Google Business؟')) return;
+
+  localStorage.removeItem('gb_name');
+  localStorage.removeItem('gb_maps');
+  localStorage.removeItem('gb_review');
+
+  if (currentUser) {
+    sb.from('profiles').update({
+      google_maps_url: null,
+      google_review_url: null
+    }).eq('id', currentUser.id);
+  }
+
+  const conn   = document.getElementById('gbConnected');
+  const card   = document.getElementById('gbConnectCard');
+  const banner = document.getElementById('connectBanner');
+
+  if (conn)   conn.style.display   = 'none';
+  if (card)   card.style.display   = 'block';
+  if (banner) banner.style.display = 'flex';
+}
+
+function loadGBFromStorage() {
+  const name      = localStorage.getItem('gb_name');
+  const mapsUrl   = localStorage.getItem('gb_maps');
+  const reviewUrl = localStorage.getItem('gb_review');
+
+  if (name) {
+    showGBConnected(name, mapsUrl, reviewUrl);
+
+    // Set QR link
+    const gl = document.getElementById('googleLink');
+    if (gl && reviewUrl) { gl.value = reviewUrl; generateQR(); }
+
+    // Set filter name
+    const fn = document.getElementById('filterBusinessName');
+    if (fn) fn.textContent = name;
+
+    // Update settings status
+    const gs = document.getElementById('googleStatus');
+    if (gs) gs.innerHTML = `<div style="color:#16a34a;font-weight:700;">✅ ${name}</div><div style="font-size:12px;color:var(--muted);">متصل</div>`;
+  }
 }
 
 // ══════════════════════════════════
