@@ -494,6 +494,9 @@ async function handleSignup() {
       });
     }
 
+    // Send welcome email via Supabase
+    await sendWelcomeEmail(email, name);
+
     showSuccessState(
       '🎉 تم إنشاء حسابك!',
       'تحقق من بريدك الإلكتروني ' + email + ' وانقر رابط التأكيد للدخول لمنصة 5tars. التجربة المجانية 14 يوم تبدأ الآن!'
