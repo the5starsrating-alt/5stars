@@ -538,7 +538,7 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
       </div>
 
       <div style="margin-bottom:16px;">
-        <label style="display:block;font-size:12px;font-weight:700;margin-bottom:6px;">اسم المشروع على Google</label>
+        <label style="display:block;font-size:12px;font-weight:700;margin-bottom:6px;">اسم المشروع على Google <span style="color:var(--red);font-size:11px;">* مطلوب</span></label>
         <input type="text" id="gbBusinessName" placeholder="مثال: مطعم الوادي - الرياض" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:'Cairo',sans-serif;font-size:13px;color:var(--text);outline:none;background:#fff;">
       </div>
 
@@ -1049,12 +1049,21 @@ async function saveGBSettings() {
   const mapsUrl   = document.getElementById('gbMapsUrl').value.trim();
   const reviewUrl = document.getElementById('gbReviewUrl').value.trim();
 
+  const whatsapp = document.getElementById('gbWhatsapp')?.value.trim() || '';
+
   if (!name) {
     alert('يرجى إدخال اسم المشروع على Google');
+    document.getElementById('gbBusinessName').focus();
     return;
   }
   if (!mapsUrl) {
     alert('يرجى إدخال رابط صفحتك على Google Maps');
+    document.getElementById('gbMapsUrl').focus();
+    return;
+  }
+  if (!whatsapp) {
+    alert('يرجى إدخال رقم واتساب لاستقبال الإشعارات');
+    document.getElementById('gbWhatsapp').focus();
     return;
   }
 
@@ -1062,15 +1071,21 @@ async function saveGBSettings() {
   if (currentUser) {
     await sb.from('profiles').update({
       full_name: name,
+      phone: whatsapp,
       google_maps_url: mapsUrl,
       google_review_url: reviewUrl
     }).eq('id', currentUser.id);
   }
 
   // Save to localStorage as backup
-  localStorage.setItem('gb_name',   name);
-  localStorage.setItem('gb_maps',   mapsUrl);
-  localStorage.setItem('gb_review', reviewUrl);
+  localStorage.setItem('gb_name',    name);
+  localStorage.setItem('gb_maps',    mapsUrl);
+  localStorage.setItem('gb_review',  reviewUrl);
+  localStorage.setItem('gb_whatsapp', whatsapp);
+
+  // Update settings phone field
+  const sp = document.getElementById('settingPhone');
+  if (sp) sp.value = whatsapp;
 
   // Update QR Code link
   if (reviewUrl) {
@@ -1084,9 +1099,8 @@ async function saveGBSettings() {
 
   // Send WhatsApp welcome message
   const phone = currentProfile?.phone || '';
-  if (phone) {
-    sendWelcomeWhatsApp(name, phone);
-  }
+  const phoneToUse = whatsapp || currentProfile?.phone || '';
+  sendWelcomeWhatsApp(name, phoneToUse);
 
   // Show connected state
   showGBConnected(name, mapsUrl, reviewUrl);
@@ -1222,7 +1236,13 @@ function loadGBFromStorage() {
   const mapsUrl   = localStorage.getItem('gb_maps');
   const reviewUrl = localStorage.getItem('gb_review');
 
+  const savedPhone = localStorage.getItem('gb_whatsapp') || '';
+
   if (name) {
+    // Pre-fill GB form whatsapp field
+    const gbWa = document.getElementById('gbWhatsapp');
+    if (gbWa && savedPhone) gbWa.value = savedPhone;
+
     showGBConnected(name, mapsUrl, reviewUrl);
 
     // Set QR link
