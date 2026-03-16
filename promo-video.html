@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5tars — فيديو تعريفي</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Cairo',sans-serif;background:#000;color:#fff;overflow:hidden;direction:rtl;}
+
+/* SCENE */
+.scene{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.8s ease;}
+.scene.active{opacity:1;}
+.scene.exit{opacity:0;}
+
+/* BG */
+.bg-blue{background:linear-gradient(135deg,#0B1F4E 0%,#1A3A8F 50%,#0B1F4E 100%);}
+.bg-dark{background:#050D1F;}
+.bg-gold{background:linear-gradient(135deg,#1A0A00,#3D1F00);}
+.bg-green{background:linear-gradient(135deg,#022B1A,#064D2E);}
+
+/* GRID OVERLAY */
+.grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);background-size:60px 60px;}
+
+/* LOGO */
+.big-logo{font-family:'Tajawal',sans-serif;font-size:clamp(60px,10vw,120px);font-weight:900;direction:ltr;line-height:1;}
+.big-logo .num{background:linear-gradient(180deg,#FFF0A0,#F5B429,#8A5500);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-style:italic;}
+.big-logo .word{color:#fff;}
+.stars-row{color:#F5B429;font-size:clamp(16px,3vw,28px);letter-spacing:8px;margin-top:8px;text-align:center;}
+
+/* TEXT */
+.big-text{font-family:'Tajawal',sans-serif;font-size:clamp(28px,5vw,64px);font-weight:900;text-align:center;line-height:1.3;}
+.big-text em{font-style:normal;background:linear-gradient(135deg,#F5B429,#FFE08A);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sub-text{font-size:clamp(14px,2vw,22px);color:rgba(255,255,255,0.7);text-align:center;margin-top:16px;line-height:1.7;}
+
+/* PHONE MOCKUP */
+.phone{width:min(260px,40vw);background:#111;border-radius:36px;padding:16px;box-shadow:0 40px 100px rgba(0,0,0,0.8),0 0 0 2px rgba(255,255,255,0.1);position:relative;overflow:hidden;}
+.phone-screen{background:#0B1F4E;border-radius:24px;padding:16px;min-height:340px;}
+.wa-header{background:#1A3A8F;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.wa-dot{width:8px;height:8px;background:#25D366;border-radius:50%;}
+.wa-name{font-size:12px;font-weight:700;color:#fff;}
+.wa-msg{background:rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:11px;line-height:1.7;color:rgba(255,255,255,0.9);}
+.wa-msg .stars{color:#F5B429;}
+.wa-time{font-size:9px;color:rgba(255,255,255,0.4);text-align:left;margin-top:4px;}
+
+/* STATS ROW */
+.stats-row{display:flex;gap:clamp(16px,3vw,48px);justify-content:center;flex-wrap:wrap;}
+.stat-box{text-align:center;}
+.stat-num{font-family:'Tajawal',sans-serif;font-size:clamp(36px,6vw,72px);font-weight:900;background:linear-gradient(135deg,#F5B429,#FFE08A);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;}
+.stat-label{font-size:clamp(11px,1.5vw,16px);color:rgba(255,255,255,0.6);margin-top:4px;}
+
+/* FEATURE LIST */
+.feat-list{display:flex;flex-direction:column;gap:12px;max-width:500px;}
+.feat-item{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 18px;font-size:clamp(13px,2vw,17px);font-weight:700;}
+.feat-icon{font-size:24px;flex-shrink:0;}
+
+/* PRICE */
+.price-box{text-align:center;}
+.price-label{font-size:16px;color:rgba(255,255,255,0.6);margin-bottom:8px;}
+.price-num{font-family:'Tajawal',sans-serif;font-size:clamp(60px,10vw,120px);font-weight:900;color:#F5B429;line-height:1;}
+.price-period{font-size:18px;color:rgba(255,255,255,0.5);}
+.price-cta{margin-top:24px;background:linear-gradient(135deg,#F5B429,#D4920A);color:#0B1F4E;border:none;border-radius:16px;padding:16px 40px;font-family:'Cairo',sans-serif;font-size:18px;font-weight:900;cursor:pointer;}
+
+/* PROGRESS BAR */
+.progress{position:fixed;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,0.1);}
+.progress-bar{height:100%;background:linear-gradient(90deg,#F5B429,#FFD700);width:0%;transition:width linear;}
+
+/* SKIP */
+.skip-btn{position:fixed;top:20px;left:20px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.7);padding:8px 16px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:13px;cursor:pointer;z-index:100;}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(0.7)}to{opacity:1;transform:scale(1)}}
+@keyframes slideRight{from{opacity:0;transform:translateX(-60px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+
+.anim-up{animation:fadeUp 0.8s ease both;}
+.anim-scale{animation:scaleIn 0.7s cubic-bezier(0.34,1.56,0.64,1) both;}
+.anim-slide{animation:slideRight 0.7s ease both;}
+.anim-pulse{animation:pulse 2s ease infinite;}
+.anim-float{animation:float 3s ease infinite;}
+
+.d1{animation-delay:0.1s;}
+.d2{animation-delay:0.3s;}
+.d3{animation-delay:0.5s;}
+.d4{animation-delay:0.7s;}
+.d5{animation-delay:0.9s;}
+</style>
+</head>
+<body>
+
+<button class="skip-btn" onclick="finish()">تخطي ←</button>
+<div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+
+<!-- SCENE 1: Logo Reveal -->
+<div class="scene bg-blue active" id="s1">
+  <div class="grid"></div>
+  <div style="text-align:center;z-index:1;">
+    <div class="big-logo anim-scale" style="direction:ltr;display:inline-block;">
+      <span class="num">5</span><span class="word">tars</span>
+    </div>
+    <div class="stars-row anim-up d2">★★★★★</div>
+    <div class="sub-text anim-up d3" style="margin-top:24px;">المنصة العربية الأولى لإدارة تقييمات Google</div>
+  </div>
+</div>
+
+<!-- SCENE 2: The Problem -->
+<div class="scene bg-dark" id="s2">
+  <div style="text-align:center;z-index:1;padding:24px;">
+    <div class="big-text anim-up" style="color:#EF4444;">
+      😤 تعبت من التقييمات السلبية؟
+    </div>
+    <div class="sub-text anim-up d2" style="max-width:600px;margin:20px auto 0;">
+      العميل الراضي لا يكتب تقييم<br>
+      والزعلان يكتب في الحال — وأنت ما تعرف!
+    </div>
+    <div class="stats-row anim-up d3" style="margin-top:40px;">
+      <div class="stat-box">
+        <div class="stat-num">90%</div>
+        <div class="stat-label">من العملاء يقرأون<br>التقييمات قبل الزيارة</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" style="-webkit-text-fill-color:#EF4444;">3.5</div>
+        <div class="stat-label">تقييم يكفي لخسارة<br>نصف عملائك</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 3: The Solution -->
+<div class="scene bg-blue" id="s3">
+  <div class="grid"></div>
+  <div style="text-align:center;z-index:1;padding:24px;">
+    <div class="big-text anim-up">
+      الحل؟ <em>5tars</em> يعمل عنك<br>24 ساعة 🤖
+    </div>
+    <div class="feat-list anim-up d2" style="margin:32px auto 0;">
+      <div class="feat-item d2 anim-slide"><span class="feat-icon">⚡</span>إشعار واتساب فوري عند كل تقييم</div>
+      <div class="feat-item d3 anim-slide"><span class="feat-icon">🤖</span>رد ذكي بالعربي بضغطة واحدة</div>
+      <div class="feat-item d4 anim-slide"><span class="feat-icon">🛡️</span>درع يوقف 90% من التقييمات السلبية</div>
+      <div class="feat-item d5 anim-slide"><span class="feat-icon">📱</span>QR Code يجلب تقييمات جديدة</div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 4: WhatsApp Demo -->
+<div class="scene bg-dark" id="s4">
+  <div style="display:flex;align-items:center;gap:clamp(20px,4vw,60px);padding:24px;flex-wrap:wrap;justify-content:center;z-index:1;">
+    <div style="text-align:right;">
+      <div class="big-text anim-up" style="font-size:clamp(22px,4vw,48px);">
+        إشعار <em>فوري</em><br>على واتساب
+      </div>
+      <div class="sub-text anim-up d2" style="text-align:right;margin-top:12px;">
+        ما إن يُنشر تقييم جديد<br>يصلك فوراً مع الرد الجاهز
+      </div>
+    </div>
+    <div class="phone anim-float">
+      <div class="phone-screen">
+        <div class="wa-header">
+          <div class="wa-dot"></div>
+          <div class="wa-name">5tars ⭐</div>
+        </div>
+        <div class="wa-msg">
+          ⭐ تقييم جديد على مشروعك!<br>
+          <span class="stars">★★★★★</span><br>
+          محمد: "خدمة ممتازة جداً!"<br><br>
+          ✅ وافق على الرد<br>
+          ✏️ عدّل الرد
+          <div class="wa-time">✓✓ 10:32 ص</div>
+        </div>
+        <div class="wa-msg" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.2);">
+          ⚠️ تقييم سلبي — رد جاهز<br>
+          <span style="color:#EF4444;">★★☆☆☆</span><br>
+          سارة: "الانتظار طال"<br><br>
+          🤖 رد احترافي جاهز
+          <div class="wa-time">✓✓ 11:15 ص</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 5: Stats -->
+<div class="scene bg-green" id="s5">
+  <div style="text-align:center;z-index:1;padding:24px;">
+    <div class="big-text anim-up">النتائج تتكلم 📈</div>
+    <div class="stats-row anim-up d2" style="margin-top:48px;">
+      <div class="stat-box">
+        <div class="stat-num">0.6+</div>
+        <div class="stat-label">زيادة في التقييم<br>خلال شهر واحد</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">×3</div>
+        <div class="stat-label">تقييمات جديدة<br>كل شهر</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">90%</div>
+        <div class="stat-label">توقف التقييمات<br>السلبية قبل Google</div>
+      </div>
+    </div>
+    <div class="sub-text anim-up d3" style="margin-top:32px;">
+      "ارتفع تقييمنا من 3.8 إلى 4.6 في شهرين" — خالد العمري، مطعم الرياض
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 6: Price -->
+<div class="scene bg-blue" id="s6">
+  <div class="grid"></div>
+  <div style="text-align:center;z-index:1;padding:24px;">
+    <div class="big-text anim-up">كل هذا بـ</div>
+    <div class="price-box anim-scale d2">
+      <div class="price-num">49</div>
+      <div class="price-period">ريال / شهر فقط</div>
+    </div>
+    <div class="sub-text anim-up d3" style="margin-top:16px;">
+      بدل موظف سوشيال ميديا بـ 3,000 ريال!
+    </div>
+    <div class="anim-up d4" style="margin-top:24px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+      <div style="background:rgba(255,255,255,0.1);border-radius:12px;padding:10px 20px;font-size:13px;">✅ 14 يوم مجاناً</div>
+      <div style="background:rgba(255,255,255,0.1);border-radius:12px;padding:10px 20px;font-size:13px;">✅ بدون بطاقة</div>
+      <div style="background:rgba(255,255,255,0.1);border-radius:12px;padding:10px 20px;font-size:13px;">✅ إلغاء في أي وقت</div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 7: CTA -->
+<div class="scene bg-dark" id="s7">
+  <div style="text-align:center;z-index:1;padding:24px;">
+    <div class="big-logo anim-scale" style="direction:ltr;display:inline-block;">
+      <span class="num">5</span><span class="word">tars</span>
+    </div>
+    <div class="stars-row anim-up d1">★★★★★</div>
+    <div class="big-text anim-up d2" style="margin-top:24px;font-size:clamp(20px,3.5vw,42px);">
+      جاهز ترفع تقييم <em>مشروعك؟</em>
+    </div>
+    <div class="anim-up d3" style="margin-top:32px;">
+      <div style="font-size:clamp(16px,2.5vw,28px);color:#F5B429;font-weight:900;font-family:'Tajawal',sans-serif;">
+        www.the5starsrating.com
+      </div>
+      <div class="sub-text" style="margin-top:8px;">ابدأ تجربتك المجانية الآن — 14 يوم بدون بطاقة</div>
+    </div>
+    <button class="price-cta anim-up d4" onclick="window.open('https://www.the5starsrating.com/signup.html','_blank')">
+      ابدأ مجاناً ←
+    </button>
+  </div>
+</div>
+
+<script>
+const scenes = ['s1','s2','s3','s4','s5','s6','s7'];
+const durations = [3000, 4000, 5000, 5000, 4000, 4000, 5000];
+let current = 0;
+let timer;
+const total = durations.reduce((a,b)=>a+b,0);
+let elapsed = 0;
+let startTime;
+
+function showScene(i) {
+  document.querySelectorAll('.scene').forEach(s => {
+    s.classList.remove('active');
+  });
+  const el = document.getElementById(scenes[i]);
+  if (el) {
+    el.classList.add('active');
+    // Re-trigger animations
+    el.querySelectorAll('[class*="anim-"]').forEach(el => {
+      el.style.animation = 'none';
+      el.offsetHeight;
+      el.style.animation = '';
+    });
+  }
+}
+
+function nextScene() {
+  if (current >= scenes.length - 1) { finish(); return; }
+  elapsed += durations[current];
+  current++;
+  showScene(current);
+  updateProgress();
+  timer = setTimeout(nextScene, durations[current]);
+}
+
+function updateProgress() {
+  const pct = (elapsed / total) * 100;
+  const bar = document.getElementById('progressBar');
+  if (bar) {
+    bar.style.transition = `width ${durations[current]}ms linear`;
+    bar.style.width = ((elapsed + durations[current]) / total * 100) + '%';
+  }
+}
+
+function finish() {
+  clearTimeout(timer);
+  window.location.href = 'https://www.the5starsrating.com/signup.html';
+}
+
+// Start
+showScene(0);
+updateProgress();
+timer = setTimeout(nextScene, durations[0]);
+</script>
+</body>
+</html>
