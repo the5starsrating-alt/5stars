@@ -711,6 +711,7 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direc
           <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;">امسح للتقييم</div>
           <div id="qrcode"></div>
           <div class="qr-label" id="qrUrl">أدخل رابط Google Business أولاً</div>
+          <div id="qrBusinessLabel" style="font-size:12px;color:var(--blue3);font-weight:700;margin-top:4px;"></div>
           <div style="display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap;">
             <button class="btn btn-primary" onclick="downloadQR()">⬇️ تحميل</button>
             <button class="btn btn-outline" onclick="printQR()">🖨️ طباعة</button>
@@ -920,8 +921,18 @@ async function init() {
       document.getElementById('settingBusiness').value = profile.business_type;
     }
 
-    // Trial days
-    if (profile.trial_ends) {
+    // Trial days / Lifetime plan
+    if (profile.plan === 'lifetime') {
+      document.getElementById('trialDays').textContent = '♾️ مدى الحياة';
+      document.getElementById('currentPlan').textContent = '🎁 مدى الحياة';
+      const upgradeBtn = document.getElementById('upgradeBtn');
+      if (upgradeBtn) upgradeBtn.style.display = 'none';
+    } else if (profile.plan === 'lifetime_friend') {
+      document.getElementById('trialDays').textContent = '♾️ مدى الحياة — هدية';
+      document.getElementById('currentPlan').textContent = '🤝 صديق المؤسس';
+      const upgradeBtn = document.getElementById('upgradeBtn');
+      if (upgradeBtn) upgradeBtn.style.display = 'none';
+    } else if (profile.trial_ends) {
       const days = Math.max(0, Math.ceil((new Date(profile.trial_ends) - new Date()) / (1000*60*60*24)));
       document.getElementById('trialDays').textContent = days + ' يوم متبقية';
     }
@@ -958,43 +969,51 @@ function showSection(name) {
 // ══════════════════════════════════
 let qrGenerated = false;
 function generateQR() {
-  // Use review URL from GB settings or manual input
-  const savedReview = localStorage.getItem('gb_review') || '';
-  const manualLink  = document.getElementById('googleLink')?.value || '';
-  const link = manualLink || savedReview || 'https://www.the5starsrating.com';
+  // Priority: manual input > localStorage (saved from GB form) > Supabase profile
+  const savedReview  = localStorage.getItem('gb_review') || '';
+  const savedName    = localStorage.getItem('gb_name') || '';
+  const profileName  = currentProfile?.full_name || '';
+  const profileReview = currentProfile?.google_review_url || '';
 
-  // Use business name from GB settings or manual input
-  const savedName   = localStorage.getItem('gb_name') || '';
-  const manualName  = document.getElementById('businessName')?.value || '';
-  const bizName = manualName || savedName || '';
-
-  // Auto-fill fields if empty
   const glField = document.getElementById('googleLink');
   const bnField = document.getElementById('businessName');
-  if (glField && !glField.value && savedReview) glField.value = savedReview;
-  if (bnField && !bnField.value && savedName)   bnField.value = savedName;
+  const msgField = document.getElementById('qrMessage');
+
+  // Auto-fill from saved data
+  if (glField && !glField.value) glField.value = savedReview || profileReview || '';
+  if (bnField && !bnField.value) bnField.value = savedName  || profileName  || '';
+
+  const link    = glField?.value || savedReview || profileReview || 'https://www.the5starsrating.com';
+  const bizName = bnField?.value || savedName   || profileName   || '5tars';
+  const msg     = msgField?.value || 'شاركنا رأيك! ⭐';
 
   const el = document.getElementById('qrcode');
   if (!el) return;
   el.innerHTML = '';
 
   const qrUrl = document.getElementById('qrUrl');
-  if (qrUrl) qrUrl.textContent = link.length > 40 ? link.substring(0,40)+'...' : link;
+  if (qrUrl) qrUrl.textContent = link.length > 45 ? link.substring(0,45)+'...' : link;
 
+  // Update download filename with business name
   new QRCode(el, {
     text: link,
-    width: 160, height: 160,
+    width: 180, height: 180,
     colorDark: '#0B1F4E', colorLight: '#ffffff',
     correctLevel: QRCode.CorrectLevel.H
   });
   qrGenerated = true;
+
+  // Update QR label
+  const label = document.getElementById('qrBusinessLabel');
+  if (label) label.textContent = bizName;
 }
 
 function downloadQR() {
   const canvas = document.querySelector('#qrcode canvas');
   if (!canvas) return alert('أنشئ QR Code أولاً');
+  const bizName = localStorage.getItem('gb_name') || currentProfile?.full_name || '5tars';
   const a = document.createElement('a');
-  a.download = '5tars-qr.png';
+  a.download = `QR-${bizName}.png`;
   a.href = canvas.toDataURL();
   a.click();
 }
@@ -1339,7 +1358,8 @@ function loadGBFromStorage() {
     const glField = document.getElementById('googleLink');
     const bnField = document.getElementById('businessName');
     if (glField && reviewUrl) glField.value = reviewUrl;
-    if (bnField && name)      bnField.value = name;
+    else if (glField && mapsUrl) glField.value = mapsUrl;
+    if (bnField && name) bnField.value = name;
     generateQR();
 
     // Set QR link
