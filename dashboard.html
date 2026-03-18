@@ -21,7 +21,6 @@ Output
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-<script src="/config.js"></script>
 <style>
 :root {
   --blue:   #0B1F4E;
@@ -1035,6 +1034,19 @@ function printQR() {
 // ══════════════════════════════════
 //  AI REPLY SIMULATION
 // ══════════════════════════════════
+async function callClaude(prompt, model) {
+  const res = await fetch('https://xdmbwtnpadjeinclmffh.supabase.co/functions/v1/claude-proxy', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkbWJ3dG5wYWRqZWluY2xtZmZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NDI1OTksImV4cCI6MjA4ODQxODU5OX0.fmWmQXlm0eHnj8I5PFxakW7xh13nnMQBN1yU6-z2aFw'
+    },
+    body: JSON.stringify({ prompt, model: model || 'claude-haiku-4-5-20251001' })
+  });
+  const data = await res.json();
+  return data.text?.trim() || '';
+}
+
 async function generateReply(btn) {
   const item = btn.closest('.review-item');
   const reviewText = item.querySelector('.review-text')?.textContent?.trim() || '';
@@ -1054,14 +1066,8 @@ async function generateReply(btn) {
       ? `أنت مدير ${bizType} اسمه "${bizName}". كتب عميل اسمه "${reviewerName}" تقييماً سلبياً بـ ${stars} نجوم قائلاً: "${reviewText}". اكتب رداً احترافياً ومتعاطفاً باللغة العربية السعودية، مختصراً (3-4 جمل)، يُقر بالمشكلة ويعد بالتحسين ويدعوه للتواصل. لا تبدأ بـ "بالطبع" أو "أهلاً".`
       : `أنت مدير ${bizType} اسمه "${bizName}". كتب عميل اسمه "${reviewerName}" تقييماً إيجابياً بـ ${stars} نجوم قائلاً: "${reviewText}". اكتب رداً شكراً احترافياً ودافئاً باللغة العربية السعودية، مختصراً (2-3 جمل)، يشكر العميل بشكل شخصي ويدعوه للعودة. لا تبدأ بـ "بالطبع" أو "أهلاً".`;
 
-    const res = await fetch(SUPABASE_URL + '/functions/v1/claude-proxy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
-      body: JSON.stringify({ prompt, model: 'claude-haiku-4-5-20251001', max_tokens: 300 })
-    });
-
-    const data = await res.json();
-    const reply = data.text?.trim() || (isNegative
+    const replyText = await callClaude(prompt);
+    const reply = replyText || (isNegative
       ? 'نأسف جداً على تجربتك ونعدك بالتحسين. يرجى التواصل معنا مباشرة لحل المشكلة 🙏'
       : 'شكراً جزيلاً على تقييمك الرائع! يسعدنا خدمتك دائماً ⭐');
 

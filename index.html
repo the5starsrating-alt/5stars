@@ -602,13 +602,25 @@ nav.scrolled .hamburger span{background:var(--text-dark);}
   </div>
 </footer>
 
-<script src="/config.js"></script>
 <script>
 function toggleMenu(){document.getElementById('mobileMenu').classList.toggle('open');}
 function closeMenu(){document.getElementById('mobileMenu').classList.remove('open');}
 const obs=new IntersectionObserver((e)=>{e.forEach(i=>{if(i.isIntersecting)i.target.classList.add('visible');});},{threshold:0.12});
 document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
 window.addEventListener('scroll',()=>{document.querySelector('nav').classList.toggle('scrolled',window.scrollY>80);});
+async function callClaude(prompt, model) {
+  const res = await fetch('https://xdmbwtnpadjeinclmffh.supabase.co/functions/v1/claude-proxy', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkbWJ3dG5wYWRqZWluY2xtZmZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NDI1OTksImV4cCI6MjA4ODQxODU5OX0.fmWmQXlm0eHnj8I5PFxakW7xh13nnMQBN1yU6-z2aFw'
+    },
+    body: JSON.stringify({ prompt, model: model || 'claude-haiku-4-5-20251001' })
+  });
+  const data = await res.json();
+  return data.text?.trim() || '';
+}
+
 async function runDiagnosis(){
   const mapsUrl = document.getElementById('diagMapsUrl')?.value.trim() || '';
   if(!mapsUrl){ alert('من فضلك أدخل رابط مشروعك على Google Maps'); return; }
@@ -632,16 +644,10 @@ async function runDiagnosis(){
 رد فقط بـ JSON بهذا الشكل بدون أي نص آخر:
 {"score":65,"rating":"3.8","replyRate":25,"visibility":40,"issues":["مشكلة 1","مشكلة 2","مشكلة 3"],"recommendations":["توصية 1","توصية 2","توصية 3"]}`;
 
-    const res = await fetch(SUPABASE_URL + '/functions/v1/claude-proxy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
-      body: JSON.stringify({ prompt, model: 'claude-haiku-4-5-20251001', max_tokens: 400 })
-    });
-
-    const data = await res.json();
+    const responseText = await callClaude(prompt);
     let analysis;
     try {
-      const text = data.text || '{}';
+      const text = responseText || '{}';
       const clean = text.replace(/```json|```/g, '').trim();
       analysis = JSON.parse(clean);
     } catch(e) {
